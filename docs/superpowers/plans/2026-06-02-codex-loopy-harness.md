@@ -1,6 +1,6 @@
 # Codex Loopy Harness Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Build the v0.1 Codex Loopy Harness document set, capability registry, and evidence template based on the approved Hugh-inspired design.
 
@@ -26,7 +26,7 @@
 **Files:**
 - Create: `AGENTS.md`
 
-- [ ] **Step 1: Write `AGENTS.md`**
+- [x] **Step 1: Write `AGENTS.md`**
 
 Create the file with this content:
 
@@ -101,7 +101,7 @@ Capture durable facts only:
 Keep project-scoped facts separate from global facts.
 ```
 
-- [ ] **Step 2: Verify file exists and contains core rule**
+- [x] **Step 2: Verify file exists and contains core rule**
 
 Run:
 
@@ -117,7 +117,7 @@ Expected: all three patterns are found.
 **Files:**
 - Create: `docs/harness/principles.md`
 
-- [ ] **Step 1: Write principles document**
+- [x] **Step 1: Write principles document**
 
 Create the file with this content:
 
@@ -183,7 +183,7 @@ Do not turn every conversation into memory.
 Save facts that change future behavior. Separate project facts from global preferences.
 ```
 
-- [ ] **Step 2: Verify principle coverage**
+- [x] **Step 2: Verify principle coverage**
 
 Run:
 
@@ -198,7 +198,7 @@ Expected: all four headings are found.
 **Files:**
 - Create: `docs/harness/capability-registry.md`
 
-- [ ] **Step 1: Write registry document**
+- [x] **Step 1: Write registry document**
 
 Create the file with this content:
 
@@ -228,7 +228,7 @@ This registry maps Hugh Kim's published skill/plugin catalog into this Codex wor
 | `agent-browser` | QA | Browser plugin | `adopt` |
 | `security-best-practices` | Security | OpenAI curated skill | `install` |
 | `vulnerability-scanner` | Security | Security checklist, future reputable scanner | `adapt` |
-| `pentest-checklist` | Security | Security threat model skill plus local checklist | `install` |
+| `pentest-checklist` | Security | Security threat model skill plus local checklist | `adapt` |
 | `supabase-postgres` | Platform | Supabase-specific skill/method | `defer` |
 | `supabase-manager` | Platform | Supabase-specific skill/method | `defer` |
 | `mcp-project-mgr` | Dev tools | Capability registry and project docs | `adapt` |
@@ -300,7 +300,7 @@ Evaluate later:
 4. reputable `pentest-checklist`
 ```
 
-- [ ] **Step 2: Verify Hugh mapping exists**
+- [x] **Step 2: Verify Hugh mapping exists**
 
 Run:
 
@@ -315,7 +315,7 @@ Expected: all five patterns are found.
 **Files:**
 - Create: `docs/harness/gates.md`
 
-- [ ] **Step 1: Write gates document**
+- [x] **Step 1: Write gates document**
 
 Create the file with this content:
 
@@ -340,7 +340,7 @@ These block completion:
 | `contract-missing` | No acceptance criteria for non-trivial task | Write contract before editing. |
 | `verification-missing` | Required command/check not run | Run check or explain why impossible. |
 | `test-failed` | Test/build/typecheck fails | Fix and rerun. |
-| `evidence-missing` | Evidence required but absent | Create evidence JSON. |
+| `evidence-missing` | Evidence required but absent | Create or update the required evidence record. |
 | `finding-critical` | Critical finding remains | Fix and run full QA. |
 | `finding-high` | High finding remains | Fix and run full QA. |
 | `boundary-violation` | Edit outside declared file boundary | Stop and reconcile scope. |
@@ -364,7 +364,7 @@ Each QA cycle:
 
 1. Collect findings.
 2. Classify severity.
-3. Route finding to role.
+3. Route finding to the responsible role or capability listed in the evidence record.
 4. Fix must-fix severities.
 5. Rerun targeted verification.
 6. Rerun full QA for high/critical changes.
@@ -380,7 +380,7 @@ Each QA cycle:
 | `LOW` | no | none unless cheap |
 ```
 
-- [ ] **Step 2: Verify gate taxonomy**
+- [x] **Step 2: Verify gate taxonomy**
 
 Run:
 
@@ -395,7 +395,7 @@ Expected: all four patterns are found.
 **Files:**
 - Create: `docs/harness/memory.md`
 
-- [ ] **Step 1: Write memory document**
+- [x] **Step 1: Write memory document**
 
 Create the file with this content:
 
@@ -439,7 +439,11 @@ Memory is for durable facts that should change future behavior.
   "scope": "project",
   "source": "",
   "reason": "",
-  "date": "2026-06-02"
+  "date": "2026-06-02",
+  "confidence": 1.0,
+  "count": 1,
+  "relation": "INDEPENDENT",
+  "replaces": []
 }
 ```
 
@@ -458,10 +462,12 @@ Do not capture:
 - Temporary status updates.
 - One-off command output.
 - Unverified assumptions.
-- Private or sensitive data unless explicitly needed and safe.
+- Secrets, credentials, tokens, keys, or personal data.
+- Sensitive details unless the user gives explicit consent to preserve them.
+- Raw private content when a redacted summary would work.
 ```
 
-- [ ] **Step 2: Verify memory model**
+- [x] **Step 2: Verify memory model**
 
 Run:
 
@@ -477,7 +483,7 @@ Expected: all four patterns are found.
 - Create: `docs/verification/skills-registry.md`
 - Create: `docs/verification/evidence-template.qa-evidence.json`
 
-- [ ] **Step 1: Write skills registry**
+- [x] **Step 1: Write skills registry**
 
 Create `docs/verification/skills-registry.md` with this content:
 
@@ -532,7 +538,7 @@ Date: 2026-06-02
 No new skills have been installed yet.
 ```
 
-- [ ] **Step 2: Write evidence template**
+- [x] **Step 2: Write evidence template**
 
 Create `docs/verification/evidence-template.qa-evidence.json` with this content:
 
@@ -576,7 +582,7 @@ Create `docs/verification/evidence-template.qa-evidence.json` with this content:
 }
 ```
 
-- [ ] **Step 3: Validate JSON**
+- [x] **Step 3: Validate JSON**
 
 Run:
 
@@ -586,7 +592,7 @@ python3 -m json.tool docs/verification/evidence-template.qa-evidence.json >/dev/
 
 Expected: exit code 0.
 
-- [ ] **Step 4: Verify registry references Hugh candidates**
+- [x] **Step 4: Verify registry references Hugh candidates**
 
 Run:
 
@@ -601,7 +607,7 @@ Expected: all four patterns are found.
 **Files:**
 - Read: all files created above.
 
-- [ ] **Step 1: Verify required files exist**
+- [x] **Step 1: Verify required files exist**
 
 Run:
 
@@ -617,7 +623,7 @@ test -f docs/verification/evidence-template.qa-evidence.json
 
 Expected: exit code 0.
 
-- [ ] **Step 2: Scan for unfinished markers**
+- [x] **Step 2: Scan for unfinished markers**
 
 Run:
 
@@ -627,7 +633,7 @@ rg -n "TB[D]|TO[D]O|FIXM[E]|implement late[r]" AGENTS.md docs/harness docs/verif
 
 Expected: no matches.
 
-- [ ] **Step 3: Verify design linkage**
+- [x] **Step 3: Verify design linkage**
 
 Run:
 
