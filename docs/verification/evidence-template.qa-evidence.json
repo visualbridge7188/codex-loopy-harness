@@ -1,0 +1,37 @@
+{
+  "task": {
+    "title": "",
+    "date": "2026-06-02",
+    "scope": ""
+  },
+  "contract": {
+    "acceptanceCriteria": [],
+    "qaScenarios": [],
+    "fileBoundaries": []
+  },
+  "capabilities": {
+    "skillsUsed": [],
+    "pluginsUsed": [],
+    "toolsInstalled": [],
+    "toolsSkipped": []
+  },
+  "verification": {
+    "commandsRun": [],
+    "testResults": [],
+    "browserChecks": [],
+    "securityChecks": [],
+    "findings": []
+  },
+  "loop": {
+    "cycle": 1,
+    "maxCycles": 3,
+    "mustFixSeverities": ["CRITICAL", "HIGH"],
+    "status": "pass"
+  },
+  "memory": {
+    "decisions": [],
+    "preferences": [],
+    "patterns": [],
+    "constraints": []
+  }
+}
