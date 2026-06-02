@@ -18,7 +18,7 @@ These block completion:
 | `contract-missing` | No acceptance criteria for non-trivial task | Write contract before editing. |
 | `verification-missing` | Required command/check not run | Run check or explain why impossible. |
 | `test-failed` | Test/build/typecheck fails | Fix and rerun. |
-| `evidence-missing` | Evidence required but absent | Create evidence JSON. |
+| `evidence-missing` | Evidence required but absent | Create or update the required evidence record. |
 | `finding-critical` | Critical finding remains | Fix and run full QA. |
 | `finding-high` | High finding remains | Fix and run full QA. |
 | `boundary-violation` | Edit outside declared file boundary | Stop and reconcile scope. |
@@ -42,7 +42,7 @@ Each QA cycle:
 
 1. Collect findings.
 2. Classify severity.
-3. Route finding to role.
+3. Route finding to the responsible role or capability listed in the evidence record.
 4. Fix must-fix severities.
 5. Rerun targeted verification.
 6. Rerun full QA for high/critical changes.
