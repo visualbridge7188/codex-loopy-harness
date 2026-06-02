@@ -1,0 +1,77 @@
+{
+  "task": {
+    "title": "Document harness usage and lecture-to-HTML-PDF workflow",
+    "date": "2026-06-02",
+    "scope": "Add usage, workflow, and enhanced prompt documentation for operating the Codex Loopy Harness."
+  },
+  "contract": {
+    "acceptanceCriteria": [
+      "Document how to use the harness.",
+      "Document how to operate the lecture conversation to HTML deck to PDF workflow.",
+      "Provide an enhanced prompt the user can reuse.",
+      "Keep skill/plugin usage aligned with the existing capability registry."
+    ],
+    "qaScenarios": [
+      "Required docs exist.",
+      "Workflow mentions HTML deck, PDF export, Browser QA, and evidence.",
+      "Prompt includes contract-first and verification-before-completion behavior."
+    ],
+    "fileBoundaries": [
+      "docs/harness/usage.md",
+      "docs/harness/workflows/lecture-to-html-pdf.md",
+      "docs/prompts/lecture-to-html-pdf-prompt.md",
+      "docs/verification/2026-06-02-usage-workflow-docs.qa-evidence.json"
+    ]
+  },
+  "capabilities": {
+    "skillsUsed": [
+      "pdf",
+      "Presentations"
+    ],
+    "pluginsUsed": [],
+    "toolsInstalled": [],
+    "toolsSkipped": [
+      "playwright: not installed yet; documented as recommended export/QA option"
+    ]
+  },
+  "verification": {
+    "commandsRun": [
+      "test -f docs/harness/usage.md && test -f docs/harness/workflows/lecture-to-html-pdf.md && test -f docs/prompts/lecture-to-html-pdf-prompt.md && test -f docs/verification/2026-06-02-usage-workflow-docs.qa-evidence.json",
+      "python3 -m json.tool docs/verification/2026-06-02-usage-workflow-docs.qa-evidence.json >/dev/null",
+      "rg -n \"HTML deck|PDF export|Browser QA|evidence|Contract|verification|slide storyboard|enhanced prompt|강의|lecture\" docs/harness/usage.md docs/harness/workflows/lecture-to-html-pdf.md docs/prompts/lecture-to-html-pdf-prompt.md",
+      "rg -n \"TB[D]|TO[D]O|FIXM[E]|implement late[r]\" docs/harness/usage.md docs/harness/workflows/lecture-to-html-pdf.md docs/prompts/lecture-to-html-pdf-prompt.md docs/verification/2026-06-02-usage-workflow-docs.qa-evidence.json"
+    ],
+    "testResults": [
+      "Required files present.",
+      "Evidence JSON valid.",
+      "Workflow and prompt contain required HTML deck, PDF export, Browser QA, evidence, contract, verification, and storyboard terms.",
+      "No unfinished markers found."
+    ],
+    "browserChecks": [],
+    "securityChecks": [],
+    "findings": []
+  },
+  "loop": {
+    "cycle": 1,
+    "maxCycles": 3,
+    "mustFixSeverities": [
+      "CRITICAL",
+      "HIGH"
+    ],
+    "status": "pass"
+  },
+  "memory": {
+    "decisions": [
+      "The lecture-to-deck workflow starts with one good deck before extracting reusable generators."
+    ],
+    "preferences": [
+      "User wants reusable prompts and operational documentation in Korean-friendly workflows."
+    ],
+    "patterns": [
+      "Use HTML deck plus Browser/PDF QA when the deliverable must become a PDF."
+    ],
+    "constraints": [
+      "Do not install new skills before explicit approval and smoke-test planning."
+    ]
+  }
+}
