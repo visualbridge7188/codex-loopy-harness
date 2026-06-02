@@ -17,7 +17,7 @@ Memory is for durable facts that should change future behavior.
 | Scope | Meaning |
 | --- | --- |
 | `project` | Applies only to this workspace. |
-| `global` | Applies across the user's work OS. |
+| `global` | Applies across workspaces/projects when the preference or rule is not project-specific. |
 
 ## Relation Handling
 
@@ -37,6 +37,10 @@ Memory is for durable facts that should change future behavior.
   "scope": "project",
   "source": "",
   "reason": "",
+  "confidence": 1.0,
+  "count": 1,
+  "relation": "INDEPENDENT",
+  "replaces": [],
   "date": "2026-06-02"
 }
 ```
@@ -56,4 +60,6 @@ Do not capture:
 - Temporary status updates.
 - One-off command output.
 - Unverified assumptions.
-- Private or sensitive data unless explicitly needed and safe.
+- Secrets, credentials, tokens, keys, or personal data.
+- Sensitive details unless the user explicitly asks to preserve them.
+- Raw private content when a redacted summary would work.
