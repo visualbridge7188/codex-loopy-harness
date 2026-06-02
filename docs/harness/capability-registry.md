@@ -23,7 +23,7 @@ This registry maps Hugh Kim's published skill/plugin catalog into this Codex wor
 | `agent-browser` | QA | Browser plugin | `adopt` |
 | `security-best-practices` | Security | OpenAI curated skill | `install` |
 | `vulnerability-scanner` | Security | Security checklist, future reputable scanner | `adapt` |
-| `pentest-checklist` | Security | Security threat model skill plus local checklist | `install` |
+| `pentest-checklist` | Security | Security threat model skill plus local checklist | `adapt` |
 | `supabase-postgres` | Platform | Supabase-specific skill/method | `defer` |
 | `supabase-manager` | Platform | Supabase-specific skill/method | `defer` |
 | `mcp-project-mgr` | Dev tools | Capability registry and project docs | `adapt` |
