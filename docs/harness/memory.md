@@ -61,5 +61,5 @@ Do not capture:
 - One-off command output.
 - Unverified assumptions.
 - Secrets, credentials, tokens, keys, or personal data.
-- Sensitive details unless the user explicitly asks to preserve them.
+- Sensitive details unless the user gives explicit consent to preserve them.
 - Raw private content when a redacted summary would work.
