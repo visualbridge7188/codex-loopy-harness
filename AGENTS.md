@@ -55,6 +55,41 @@ Before creating a new local tool, check:
 
 Classify each candidate as `adopt`, `install`, `adapt`, or `skip`.
 
+## Skill Discovery Protocol
+
+When the agent detects a gap in its knowledge, tools, CLI, or API capabilities during task execution:
+
+1. **Check local first** (Capability-First Rule):
+   - Installed skills (`docs/verification/skills-registry.md`)
+   - Enabled plugins
+   - Project-local scripts
+   - Hugh reference capabilities (`docs/harness/capability-registry.md`)
+
+2. **Search externally** when local resources are insufficient:
+   ```bash
+   node skills/discover-skills/search-skills.mjs "<domain query>" --json
+   ```
+   Or use the skills.sh API directly:
+   ```bash
+   curl -s "https://skills.sh/api/search?q=<query>&limit=10"
+   ```
+
+3. **Evaluate candidates** before installing:
+   - Prefer ≥ 1,000 installs from trusted sources (`vercel-labs`, `anthropics`, `microsoft`).
+   - Read SKILL.md content from unknown sources before installing.
+   - Never install untrusted skills without content review (fail-closed).
+
+4. **Install and integrate**:
+   ```bash
+   npx skills add <owner/repo@skill-name> -g -y
+   ```
+
+5. **Record** the new skill in `docs/verification/skills-registry.md` and `docs/harness/capability-registry.md`.
+
+6. **Resume** the original task with the new capability.
+
+See `skills/discover-skills/SKILL.md` for the full protocol.
+
 ## Memory Rule
 
 Capture durable facts only:

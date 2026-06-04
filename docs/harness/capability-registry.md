@@ -30,6 +30,7 @@ This registry maps Hugh Kim's published skill/plugin catalog into this Codex wor
 | `prompt-engineering` | Dev tools | Prompt/process guidance | `adapt` |
 | `skill-creation` | Dev tools | Existing skill creator skills | `adopt` |
 | `skill-judge` | Dev tools | Skill smoke-test registry | `adapt` |
+| `discover-skills` | Dev tools | Local project skill: autonomous search + install from skills.sh | `adopt` |
 | `plugin-forge` | Dev tools | Existing plugin creator skill | `adopt` |
 | `web-artifacts` | Frontend | Browser plus artifact generation patterns | `adapt` |
 | `frontend-design` | Frontend | Existing frontend/design guidance and Browser QA | `adopt` |
