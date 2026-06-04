@@ -20,6 +20,9 @@ Date: 2026-06-02
 | watch | skill | Video understanding. |
 | wp-plugin-tdd | skill | WordPress plugin TDD. |
 | understand suite | skills | Codebase graph, diff, onboarding, domain, and explanation workflows. |
+| discover-skills | skill | Autonomous skill search, evaluation, and installation from skills.sh ecosystem. |
+| frontend-slides | skill | Zero-dependency animation-rich HTML presentations. Installed at `.frontend-slides/`. |
+| install-gptaku | skill | Installer script to convert and install Claude Code plugins into Antigravity. |
 
 ## Install Candidates
 
