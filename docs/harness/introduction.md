@@ -98,7 +98,7 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 
 ---
 
-## 4. 스킬 시스템 (9개)
+## 4. 스킬 시스템 (8개)
 
 스킬은 재사용 가능한 자동화 워크플로우입니다:
 
@@ -112,7 +112,6 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 | `loopy-era-eval`  | Loopy Era 평가 실행                         |
 | `self-improve`    | 하네스 자가 개선 사이클                     |
 | `discover-skills` | 외부 스킬 검색 및 발견                      |
-| `install-gptaku`  | GPTaku 브릿지 설치                          |
 
 ### 핵심 스킬: QA Cycle (폐루프 QA)
 
@@ -128,14 +127,14 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 
 ## 5. 커맨드 시스템 (5개)
 
-| 커맨드                  | 용도                              |
-| ----------------------- | --------------------------------- |
-| `/team`                 | 8-Phase SDLC 파이프라인 트리거    |
-| `/project-orchestrator` | 프로젝트 오케스트레이터 직접 호출 |
-| `/dashboard`            | 프로젝트 상태 대시보드            |
-| `/cc-apply`             | 변경사항 적용                     |
-| `/cc-sync`              | 동기화 실행                       |
-| `/scenario-test`        | 시나리오 테스트 실행              |
+| 커맨드　　　　　　　　　 | 용도　　　　　　　　　　　　　　　 |
+| ------------------------ | ---------------------------------- |
+| `/team`　　　　　　　　  | 8-Phase SDLC 파이프라인 트리거　　 |
+| `/project-orchestrator`  | 프로젝트 오케스트레이터 직접 호출  |
+| `/dashboard`　　　　　　 | 프로젝트 상태 대시보드　　　　　　 |
+| `/cc-apply`　　　　　　  | 변경사항 적용　　　　　　　　　　  |
+| `/cc-sync`　　　　　　　 | 동기화 실행　　　　　　　　　　　  |
+| `/scenario-test`　　　　 | 시나리오 테스트 실행　　　　　　　 |
 
 ---
 
@@ -248,7 +247,7 @@ hugh.kim/
 │   ├── performance-optimizer.md
 │   ├── product-specifier.md
 │   └── telegram-notifier.md
-├── skills/                # 9개 자동화 스킬
+├── skills/                # 8개 자동화 스킬
 ├── commands/              # 6개 커맨드
 ├── hooks/                 # 10개 자동화 훅
 ├── rules/                 # 코딩 규칙 (프론트/백/QA)
