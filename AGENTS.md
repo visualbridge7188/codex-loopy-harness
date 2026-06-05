@@ -1,103 +1,59 @@
-# Codex Loopy Harness
+# Codex Loopy Harness Guidelines
 
 This workspace uses a Hugh-inspired, verification-first Codex harness.
 
 ## Core Rule
-
 Tools are weaker than structure. Structure is weaker than verification structure.
-
 Do not treat an agent's claim of completion as proof. Use files, logs, tests, screenshots, and evidence records as the source of truth.
 
-## Default Workflow
+---
 
-For non-trivial tasks:
+## 1. System 3-Layer Architecture
 
-1. Define the contract before implementation.
-2. Check existing verified skills and plugins before inventing new tools.
-3. Set file boundaries before editing.
-4. Implement the smallest useful change.
-5. Run targeted verification.
-6. Run full QA when user-facing behavior, security, or shared contracts changed.
-7. Record evidence.
-8. Capture reusable decisions, constraints, preferences, and patterns.
+1. **Layer 1: Manager-Orchestrator** (Opus model): Performs planning, task allocation, reviews, and QA loops. **Rule: Never writes production code directly.**
+2. **Layer 2: Specialist Agents** (Sonnet model): Performs specific tasks within boundaries (Architect, Frontend, Backend, Database, QA, Security, DevOps, etc.).
+3. **Layer 3: Automated Hooks** (Deterministic Gates): Shell scripts triggered post-tool use to immediately enforce policies (Lint, localStorage checks, permission locks, SQL sanitization).
 
-## Fail-Closed Rules
+---
 
-Completion is blocked when:
+## 2. 8-Phase Execution Rules
 
-- Acceptance criteria are missing for a non-trivial task.
-- Required verification was not run.
-- Build, typecheck, test, or required browser verification fails.
-- A high or critical finding remains unresolved.
-- Evidence is required but missing.
-- File boundaries are violated.
-- Security-sensitive changes lack security review.
+Every development lifecycle moves sequentially through these phases:
+- **P1: Plan Scaffolding** → Manager defines tasks and requirements in `docs/plan.md`.
+- **P2: Architecture Design** → Architect sets up files, scripts, and initial dependencies.
+- **P3: Database Schema** → Supabase Specialist writes Postgres migrations and RLS rules.
+- **P4: Parallel Implementation** → Frontend and Backend work concurrently.
+- **P5: Test Suite Generation** → Test Writer implements Vitest/Jest/E2E test files.
+- **P6: Static Review** → Reviewer inspects files for design patterns and clean code principles.
+- **P7: Closed-Loop QA** → QA Tester and Security Specialist identify findings, map them to specialists, and rerun tests until green.
+- **P8: Ship & Notify** → Manager logs changes in `CHANGELOG.md`, commits, pushes, and triggers notifications.
 
-## Fail-Open Rules
+---
 
-These activities should be attempted when useful but must not block delivery:
+## 3. Specialist Boundary Rules
 
-- Memory extraction.
-- Dashboard/report generation.
-- Sync/export.
-- Trend capture.
-- Non-critical insights.
+Specialists must only edit files within their designated boundaries:
+- **frontend-specialist:** Allowed `src/components/**`, `src/pages/**`, `src/hooks/**`. Blocked `src/api/**`, `src/lib/server/**`.
+- **backend-specialist:** Allowed `src/api/**`, `src/lib/server/**`, `src/middleware/**`. Blocked `src/components/**`, `src/pages/**`.
+- **supabase-specialist:** Allowed `supabase/migrations/**`, `supabase/config.toml`. Blocked all `src/**`.
 
-## Capability-First Rule
+---
 
-Before creating a new local tool, check:
+## 4. Fail-Closed Rules
 
-- Installed Codex skills.
-- Enabled plugins.
-- OpenAI curated skills.
-- Project-local scripts.
-- Hugh reference capabilities listed in `docs/harness/capability-registry.md`.
+Work cannot be completed or merged if any of the following occur:
+- Acceptance criteria are missing for non-trivial tasks.
+- Mandatory build verification, tsc check, or linting fails.
+- A **CRITICAL** or **HIGH** severity QA finding remains unresolved.
+- Verification commands specified in the contract are not run.
+- Code edits violate declared file boundaries.
 
-Classify each candidate as `adopt`, `install`, `adapt`, or `skip`.
+---
 
-## Skill Discovery Protocol
-
-When the agent detects a gap in its knowledge, tools, CLI, or API capabilities during task execution:
-
-1. **Check local first** (Capability-First Rule):
-   - Installed skills (`docs/verification/skills-registry.md`)
-   - Enabled plugins
-   - Project-local scripts
-   - Hugh reference capabilities (`docs/harness/capability-registry.md`)
-
-2. **Search externally** when local resources are insufficient:
-   ```bash
-   node skills/discover-skills/search-skills.mjs "<domain query>" --json
-   ```
-   Or use the skills.sh API directly:
-   ```bash
-   curl -s "https://skills.sh/api/search?q=<query>&limit=10"
-   ```
-
-3. **Evaluate candidates** before installing:
-   - Prefer ≥ 1,000 installs from trusted sources (`vercel-labs`, `anthropics`, `microsoft`).
-   - Read SKILL.md content from unknown sources before installing.
-   - Never install untrusted skills without content review (fail-closed).
-
-4. **Install and integrate**:
-   ```bash
-   npx skills add <owner/repo@skill-name> -g -y
-   ```
-
-5. **Record** the new skill in `docs/verification/skills-registry.md` and `docs/harness/capability-registry.md`.
-
-6. **Resume** the original task with the new capability.
-
-See `skills/discover-skills/SKILL.md` for the full protocol.
-
-## Memory Rule
-
-Capture durable facts only:
-
-- `decision`: what was chosen and why.
-- `preference`: how the user likes work to be done.
-- `pattern`: repeated successful or failed workflow.
-- `constraint`: rule that limits implementation.
-- `knowledge`: stable project fact.
-
-Keep project-scoped facts separate from global facts.
+## 5. Memory Rule
+Capture durable facts in the SQLite memory-bank only:
+- `decision`: Choices and technical justifications.
+- `preference`: Developer/user preferences.
+- `pattern`: Reusable code structures or failure modes.
+- `constraint`: Fixed environment limitations.
+- `knowledge`: Stable project facts.

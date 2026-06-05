@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent 스킬 & 워크플로우 쿡북</title>
+<style>
+:root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;--text:#e5e5e5;--text2:#999;--accent:#6366f1;--accent2:#8b5cf6;--green:#10b981;--blue:#3b82f6;--orange:#f59e0b;--pink:#ec4899;--red:#ef4444;--cyan:#06b6d4}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:20px;height:54px}
+.nav-logo{font-weight:800;font-size:17px;background:linear-gradient(135deg,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.nav-links{display:flex;gap:2px;overflow-x:auto}
+.nav-links a{padding:7px 14px;border-radius:7px;color:var(--text2);font-size:13px;font-weight:500;transition:all .2s;white-space:nowrap}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--surface2);text-decoration:none}
+.hero{padding:60px 24px 32px;text-align:center;max-width:780px;margin:0 auto}
+.hero h1{font-size:36px;font-weight:800;margin-bottom:12px;background:linear-gradient(135deg,#fff,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:16px;color:var(--text2);margin-bottom:28px}
+.hero-stats{display:flex;justify-content:center;gap:28px;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat .num{font-size:28px;font-weight:800;color:var(--accent)}
+.hero-stat .label{font-size:12px;color:var(--text2)}
+.container{max-width:1200px;margin:0 auto;padding:0 24px 80px}
+.section{margin-top:56px}
+.section-title{font-size:24px;font-weight:800;margin-bottom:6px}
+.section-desc{color:var(--text2);margin-bottom:24px;font-size:14px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:7px 14px;border-radius:7px;background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;font-weight:500}
+.tab:hover{border-color:var(--accent);color:var(--text)}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:18px;transition:all .3s}
+.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.card-top{display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;gap:8px}
+.card-name{font-size:15px;font-weight:700}
+.card-badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:600;white-space:nowrap}
+.b-skill{background:rgba(245,158,11,.12);color:var(--orange)}
+.b-mcp{background:rgba(16,185,129,.12);color:var(--green)}
+.b-kskill{background:rgba(99,102,241,.12);color:var(--accent)}
+.card-desc{font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--surface2);color:var(--text2)}
+.tag-cat{background:rgba(99,102,241,.1);color:var(--accent)}
+.installs-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(16,185,129,.1);color:var(--green);font-weight:600}
+.card-link{font-size:11px;color:var(--accent)}
+.workflow{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px}
+.wf-title{font-size:17px;font-weight:700;margin-bottom:5px}
+.wf-desc{color:var(--text2);font-size:13px;margin-bottom:16px}
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:14px;background:var(--surface2);border-radius:9px}
+.flow-step{display:flex;align-items:center;gap:6px;padding:8px 13px;border-radius:7px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--surface);white-space:nowrap}
+.flow-step .icon{font-size:16px}
+.flow-arrow{color:var(--accent);font-size:16px;font-weight:700}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.tool{font-size:11px;padding:3px 8px;border-radius:5px;background:rgba(99,102,241,.08);color:var(--accent);border:1px solid rgba(99,102,241,.15)}
+.tool-mcp{background:rgba(16,185,129,.08);color:var(--green);border-color:rgba(16,185,129,.15)}
+.tool-skill{background:rgba(245,158,11,.08);color:var(--orange);border-color:rgba(245,158,11,.15)}
+.search-box{position:relative;max-width:460px;margin-bottom:20px}
+.search-box input{width:100%;padding:11px 14px 11px 38px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;outline:none;transition:border-color .2s}
+.search-box input:focus{border-color:var(--accent)}
+.search-box .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2)}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:11px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:10px 14px;background:var(--surface2);color:var(--text2);font-weight:600;position:sticky;top:0;z-index:1}
+td{padding:8px 14px;border-top:1px solid var(--border);vertical-align:top}
+tr:hover td{background:rgba(99,102,241,.04)}
+.rank{font-weight:700;color:var(--accent);width:40px}
+.ins{font-weight:600;color:var(--green);text-align:right;white-space:nowrap}
+.src{color:var(--text2);font-size:11px}
+.td-desc{color:var(--text2);font-size:11px;max-width:280px}
+.count-badge{font-size:12px;color:var(--accent);font-weight:600;margin-left:8px}
+@media(max-width:768px){
+.hero h1{font-size:26px}
+.grid{grid-template-columns:1fr}
+.flow{flex-direction:column;align-items:stretch}
+.flow-arrow{transform:rotate(90deg);text-align:center}
+}
+:target{scroll-margin-top:64px}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">⚡ AI Agent 쿡북</div>
+  <div class="nav-links">
+    <a href="#workflows">워크플로우</a>
+    <a href="#directory">통합 디렉토리</a>
+    <a href="#top200">Top 200</a>
+  </div>
+</nav>
+<div class="hero">
+  <h1>AI Agent 스킬 & 워크플로우 쿡북</h1>
+  <p>1인 사업자를 위한 AI 자동화 레시피 — 스킬·MCP·CLI를 연계하여 일상을 자동화하세요</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num" id="stat-total">277</div><div class="label">전체 등록 항목</div></div>
+    <div class="hero-stat"><div class="num">200</div><div class="label">skills.sh 스킬</div></div>
+    <div class="hero-stat"><div class="num">46</div><div class="label">한국 MCP 서버</div></div>
+    <div class="hero-stat"><div class="num">31</div><div class="label">k-skill 자동화</div></div>
+    <div class="hero-stat"><div class="num">15</div><div class="label">워크플로우</div></div>
+  </div>
+</div>
+<div class="container">
+
+<!-- WORKFLOWS -->
+<div class="section" id="workflows">
+  <div class="section-title">🔄 자동화 워크플로우 레시피</div>
+  <div class="section-desc">스킬/MCP/CLI를 조합한 1인 사업자 실전 자동화 시나리오</div>
+  <div class="tabs" id="wf-tabs">
+    <div class="tab active" data-c="all">전체</div>
+    <div class="tab" data-c="marketing">📣 마케팅</div>
+    <div class="tab" data-c="sales">💰 영업·CRM</div>
+    <div class="tab" data-c="content">✍️ 콘텐츠</div>
+    <div class="tab" data-c="finance">📊 재무·세무</div>
+    <div class="tab" data-c="project">📋 프로젝트</div>
+    <div class="tab" data-c="daily">🏠 일상생활</div>
+  </div>
+  <div id="wf-list"></div>
+</div>
+
+<!-- UNIFIED DIRECTORY -->
+<div class="section" id="directory">
+  <div class="section-title">📚 통합 스킬 디렉토리 <span class="count-badge" id="dir-count"></span></div>
+  <div class="section-desc">skills.sh + awesome-mcp-korea + k-skill — 하나의 DB에서 분야별로 동적 필터링</div>
+  <div class="tabs" id="dir-tabs"></div>
+  <div class="search-box"><span class="si">🔍</span><input type="text" id="dir-search" placeholder="스킬명, 설명, 출처 검색..."></div>
+  <div class="grid" id="dir-grid"></div>
+</div>
+
+<!-- TOP 200 -->
+<div class="section" id="top200">
+  <div class="section-title">🏆 skills.sh 인기 스킬 Top 200</div>
+  <div class="section-desc">설치수 기준 상위 200개 — 각 스킬의 설명과 출처, 설치수 포함. <code>npx skills add <source></code>로 설치</div>
+  <div class="search-box"><span class="si">🔍</span><input type="text" id="tbl-search" placeholder="스킬 검색..."></div>
+  <div class="table-wrap" style="max-height:600px;overflow-y:auto">
+    <table><thead><tr><th class="rank">#</th><th>스킬명</th><th>설명</th><th>출처</th><th class="ins">설치수</th></tr></thead><tbody id="tbl-body"></tbody></table>
+  </div>
+</div>
+
+</div>
+<footer style="text-align:center;padding:32px 24px;border-top:1px solid var(--border);color:var(--text2);font-size:12px">
+  <p>AI Agent 스킬 & 워크플로우 쿡북 — 2026-06-04 조사 기준</p>
+  <p style="margin-top:6px">
+    <a href="https://www.skills.sh">skills.sh</a> · <a href="https://github.com/vercel-labs">Vercel Labs</a> · <a href="https://github.com/darjeeling/awesome-mcp-korea">awesome-mcp-korea</a> · <a href="https://github.com/NomaDamas/k-skill">k-skill</a>
+  </p>
+</footer>
+<script>
+// ===========================
+// UNIFIED DATABASE
+// ===========================
+// type: "skill" | "mcp" | "k-skill"
+// cats: array of category keys
+// installs: number or null
+// link: URL or empty string
+// desc: description
+const DB = [
+// ===== skills.sh Top 200 =====
+{n:"frontend-design",d:"프론트엔드 UI 컴포넌트·레이아웃·반응형 디자인 모범 사례 가이드",s:"anthropics/skills",t:"skill",i:498292,c:["frontend","design"],l:"https://www.skills.sh/anthropics/skills/frontend-design"},
+{n:"vercel-react-best-practices",d:"React 모범 사례 — 컴포지션, 상태관리, 성능 최적화, 서버 컴포넌트",s:"vercel-labs/agent-skills",t:"skill",i:448929,c:["frontend","react"],l:"https://www.skills.sh/vercel-labs/agent-skills/vercel-react-best-practices"},
+{n:"agent-browser",d:"에이전트용 브라우저 자동화 — 웹 스크래핑, 폼 제출, 스크린샷, 페이지 탐색",s:"vercel-labs/agent-browser",t:"skill",i:413870,c:["dev","automation"],l:"https://www.skills.sh/vercel-labs/agent-browser/agent-browser"},
+{n:"microsoft-foundry",d:"Azure AI Foundry — AI 모델 배포·관리·엔드포인트 구성",s:"microsoft/azure-skills",t:"skill",i:367651,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/microsoft-foundry"},
+{n:"azure-ai",d:"Azure AI 서비스 — OpenAI, Cognitive Services, 검색 통합",s:"microsoft/azure-skills",t:"skill",i:365531,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-ai"},
+{n:"azure-deploy",d:"Azure 배포 자동화 — App Service, Container Apps, ARM/Bicep 템플릿",s:"microsoft/azure-skills",t:"skill",i:365172,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-deploy"},
+{n:"azure-diagnostics",d:"Azure 진단 — 로그 분석, 모니터링, 트러블슈팅",s:"microsoft/azure-skills",t:"skill",i:365133,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-diagnostics"},
+{n:"azure-prepare",d:"Azure 환경 준비 — 구독, 리소스그룹, 네트워크, IAM 설정",s:"microsoft/azure-skills",t:"skill",i:365088,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-prepare"},
+{n:"azure-storage",d:"Azure 스토리지 — Blob, Queue, Table, CosmosDB 구성",s:"microsoft/azure-skills",t:"skill",i:364816,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-storage"},
+{n:"azure-validate",d:"Azure 리소스 검증 — 설정 확인, 보안 점검, 베스트프랙티스",s:"microsoft/azure-skills",t:"skill",i:364484,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-validate"},
+{n:"entra-app-registration",d:"Entra ID 앱 등록 — OAuth, SAML, API 권한 구성",s:"microsoft/azure-skills",t:"skill",i:364412,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/entra-app-registration"},
+{n:"azure-resource-lookup",d:"Azure 리소스 조회 — 리소스ID, 태그, 구독 간 검색",s:"microsoft/azure-skills",t:"skill",i:364351,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-resource-lookup"},
+{n:"azure-compliance",d:"Azure 규정 준수 — 정책, 블루프린트, 규제 표준 매핑",s:"microsoft/azure-skills",t:"skill",i:364342,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-compliance"},
+{n:"azure-rbac",d:"Azure RBAC — 역할 기반 접근 제어, 관리 그룹, 조건부 액세스",s:"microsoft/azure-skills",t:"skill",i:364323,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-rbac"},
+{n:"azure-aigateway",d:"Azure AI Gateway — API 관리, 요금제, 캐싱, 로드밸런싱",s:"microsoft/azure-skills",t:"skill",i:364248,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-aigateway"},
+{n:"azure-kusto",d:"Azure Kusto — 데이터 탐색 쿼리, Log Analytics, 그래프 분석",s:"microsoft/azure-skills",t:"skill",i:364205,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-kusto"},
+{n:"web-design-guidelines",d:"웹 디자인 가이드라인 — 타이포그래피, 색상, 간격, 접근성 원칙",s:"vercel-labs/agent-skills",t:"skill",i:363864,c:["frontend","design"],l:"https://www.skills.sh/vercel-labs/agent-skills/web-design-guidelines"},
+{n:"azure-messaging",d:"Azure 메시징 — Service Bus, Event Grid, Event Hubs 구성",s:"microsoft/azure-skills",t:"skill",i:354002,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-messaging"},
+{n:"remotion-best-practices",d:"React 기반 프로그래매틱 비디오 제작 — 코드로 영상 만들기",s:"remotion-dev/skills",t:"skill",i:347472,c:["ai-media","video"],l:"https://www.skills.sh/remotion-dev/skills/remotion-best-practices"},
+{n:"azure-hosted-copilot-sdk",d:"Azure Hosted Copilot SDK — 커스텀 AI 어시스턴트 구축",s:"microsoft/azure-skills",t:"skill",i:337402,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-hosted-copilot-sdk"},
+{n:"azure-compute",d:"Azure 컴퓨트 — VM, App Service, Functions, Container Apps",s:"microsoft/azure-skills",t:"skill",i:308205,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-compute"},
+{n:"azure-cloud-migrate",d:"Azure 클라우드 마이그레이션 — 온프레미스→클라우드 전환 가이드",s:"microsoft/azure-skills",t:"skill",i:298361,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-cloud-migrate"},
+{n:"grill-me",d:"설계 리뷰 인터뷰 — 계획을 집요하게 검토하여 결함 사전 발견",s:"mattpocock/skills",t:"skill",i:256636,c:["dev","planning"],l:"https://www.skills.sh/mattpocock/skills/grill-me"},
+{n:"skill-creator",d:"스킬 생성기 — 새로운 에이전트 스킬을 자동으로 생성하는 메타 스킬",s:"anthropics/skills",t:"skill",i:250915,c:["dev","meta"],l:"https://www.skills.sh/anthropics/skills/skill-creator"},
+{n:"azure-quotas",d:"Azure 할당량 관리 — 리소스 한도 확인, 증설 요청",s:"microsoft/azure-skills",t:"skill",i:235224,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-quotas"},
+{n:"azure-upgrade",d:"Azure 업그레이드 — API 버전, 런타임, SDK 업데이트",s:"microsoft/azure-skills",t:"skill",i:227732,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-upgrade"},
+{n:"caveman",d:"초압축 커뮤니케이션 모드 — 토큰 75% 절약, 기술적 정확도 유지",s:"juliusbrussee/caveman",t:"skill",i:208523,c:["dev","productivity"],l:"https://www.skills.sh/juliusbrussee/caveman/caveman"},
+{n:"improve-codebase-architecture",d:"코드베이스 아키텍처 개선 — 결합도 감소, 테스트 가능성 향상, 도메인 언어 정리",s:"mattpocock/skills",t:"skill",i:208186,c:["dev","architecture"],l:"https://www.skills.sh/mattpocock/skills/improve-codebase-architecture"},
+{n:"supabase-postgres-best-practices",d:"Supabase & Postgres 모범 사례 — 인증, RLS, 실시간, 엣지 함수",s:"supabase/agent-skills",t:"skill",i:207804,c:["cloud","database"],l:"https://www.skills.sh/supabase/agent-skills/supabase-postgres-best-practices"},
+{n:"azure-cost-optimization",d:"Azure 비용 최적화 — 예약, 스팟인스턴스, 미사용 리소스 정리",s:"microsoft/azure-skills",t:"skill",i:206880,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-cost-optimization"},
+{n:"azure-enterprise-infra-planner",d:"Azure 엔터프라이즈 인프라 플래너 — 대규모 아키텍처 설계",s:"microsoft/azure-skills",t:"skill",i:201821,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-enterprise-infra-planner"},
+{n:"brainstorming",d:"브레인스토밍 — 아이디어 발굴, 마인드맵, 창발적 사고 도구",s:"obra/superpowers",t:"skill",i:199846,c:["dev","planning"],l:"https://www.skills.sh/obra/superpowers/brainstorming"},
+{n:"grill-with-docs",d:"문서 기반 설계 리뷰 — CONTEXT.md, ADR을 활용한 집요한 검토",s:"mattpocock/skills",t:"skill",i:198715,c:["dev","planning"],l:"https://www.skills.sh/mattpocock/skills/grill-with-docs"},
+{n:"ui-ux-pro-max",d:"UI/UX 프로 맥스 가이드 — 고급 인터랙션, 애니메이션, 마이크로 인터랙션",s:"nextlevelbuilder/ui-ux-pro-max-skill",t:"skill",i:198566,c:["frontend","design"],l:"https://www.skills.sh/nextlevelbuilder/ui-ux-pro-max-skill/ui-ux-pro-max"},
+{n:"vercel-composition-patterns",d:"React 컴포지션 패턴 — 합성 vs 상속, 유연한 컴포넌트 설계",s:"vercel-labs/agent-skills",t:"skill",i:198461,c:["frontend","react"],l:"https://www.skills.sh/vercel-labs/agent-skills/vercel-composition-patterns"},
+{n:"tdd",d:"TDD 레드-그린-리팩터 루프 — 테스트 주도 개발 워크플로우",s:"mattpocock/skills",t:"skill",i:197859,c:["dev","testing"],l:"https://www.skills.sh/mattpocock/skills/tdd"},
+{n:"lark-doc",d:"Lark 문서 생성·편집 — 리치 텍스트, 협업 문서 자동 작성",s:"larksuite/cli",t:"skill",i:196199,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-doc"},
+{n:"lark-base",d:"Lark Base (데이터베이스) — 레코드 생성, 조회, 필터, 뷰 관리",s:"larksuite/cli",t:"skill",i:195764,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-base"},
+{n:"lark-im",d:"Lark 메신저 — 메시지 발송, 채팅방 관리, 봇 연동",s:"larksuite/cli",t:"skill",i:195472,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-im"},
+{n:"lark-drive",d:"Lark 드라이브 — 파일 업로드, 다운로드, 권한 관리",s:"larksuite/cli",t:"skill",i:195191,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-drive"},
+{n:"lark-shared",d:"Lark 공유 — 링크 생성, 외부 공유, 권한 설정",s:"larksuite/cli",t:"skill",i:195012,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-shared"},
+{n:"lark-calendar",d:"Lark 캘린더 — 일정 생성, 조회, 초대, 회의실 예약",s:"larksuite/cli",t:"skill",i:194848,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-calendar"},
+{n:"azure-kubernetes",d:"Azure Kubernetes (AKS) — 클러스터 배포, 스케일링, 모니터링",s:"microsoft/azure-skills",t:"skill",i:194700,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-kubernetes"},
+{n:"lark-wiki",d:"Lark 위키 — 지식베이스 구축, 문서 트리 관리",s:"larksuite/cli",t:"skill",i:194660,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-wiki"},
+{n:"lark-whiteboard",d:"Lark 화이트보드 — 실시간 협업 캔버스, 다이어그램",s:"larksuite/cli",t:"skill",i:194500,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-whiteboard"},
+{n:"lark-sheets",d:"Lark 시트 — 스프레드시트 생성, 수식, 차트, 피벗",s:"larksuite/cli",t:"skill",i:194457,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-sheets"},
+{n:"lark-task",d:"Lark 태스크 — 작업 관리, 칸반보드, 진행률 추적",s:"larksuite/cli",t:"skill",i:194379,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-task"},
+{n:"lark-mail",d:"Lark 메일 — 이메일 발송, 수신함 관리, 그룹메일",s:"larksuite/cli",t:"skill",i:194367,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-mail"},
+{n:"lark-vc",d:"Lark 비디오 회의 — 회의 생성, 녹화, 참가자 관리",s:"larksuite/cli",t:"skill",i:194219,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-vc"},
+{n:"lark-minutes",d:"Lark 회의록 — AI 회의 요약, 액션아이템 자동 추출",s:"larksuite/cli",t:"skill",i:194168,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-minutes"},
+{n:"lark-event",d:"Lark 이벤트 — 이벤트 생성, RSVP, 리마인더",s:"larksuite/cli",t:"skill",i:193983,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-event"},
+{n:"lark-contact",d:"Lark 연락처 — 조직도, 외부 연락처, 그룹 관리",s:"larksuite/cli",t:"skill",i:193779,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-contact"},
+{n:"lark-workflow-meeting-summary",d:"Lark 워크플로우 회의 요약 — 자동 회의록 생성 파이프라인",s:"larksuite/cli",t:"skill",i:193670,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-workflow-meeting-summary"},
+{n:"lark-openapi-explorer",d:"Lark OpenAPI 탐색기 — API 스펙 조회, 테스트, 코드 생성",s:"larksuite/cli",t:"skill",i:193423,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-openapi-explorer"},
+{n:"lark-workflow-standup-report",d:"Lark 스탠드업 리포트 — 일일 스탠드업 자동 생성",s:"larksuite/cli",t:"skill",i:193408,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-workflow-standup-report"},
+{n:"lark-skill-maker",d:"Lark 스킬 메이커 — Lark 맞춤 스킬 자동 생성",s:"larksuite/cli",t:"skill",i:193302,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-skill-maker"},
+{n:"openclaw-secure-linux-cloud",d:"OpenClaw 보안 리눅스 클라우드 — 서버 하드닝, 방화벽, SSL",s:"xixu-me/skills",t:"skill",i:188084,c:["cloud","devops"],l:"https://www.skills.sh/xixu-me/skills/openclaw-secure-linux-cloud"},
+{n:"secure-linux-web-hosting",d:"보안 리눅스 웹호스팅 — Nginx, Let's Encrypt, 자동 갱신",s:"xixu-me/skills",t:"skill",i:187848,c:["cloud","devops"],l:"https://www.skills.sh/xixu-me/skills/secure-linux-web-hosting"},
+{n:"skills-cli",d:"스킬 CLI 관리 — 설치, 업데이트, 검색, 목록 관리",s:"xixu-me/skills",t:"skill",i:187799,c:["dev","cli"],l:"https://www.skills.sh/xixu-me/skills/skills-cli"},
+{n:"running-claude-code-via-litellm",d:"LiteLLM으로 Claude Code 실행 — 다중 모델 프록시 설정",s:"xixu-me/skills",t:"skill",i:187720,c:["dev","ai"],l:"https://www.skills.sh/xixu-me/skills/running-claude-code-via-litellm-copilot"},
+{n:"opensource-guide-coach",d:"오픈소스 가이드 코치 — 기여 가이드, PR 에티켓, 라이선스",s:"xixu-me/skills",t:"skill",i:187599,c:["dev","community"],l:"https://www.skills.sh/xixu-me/skills/opensource-guide-coach"},
+{n:"readme-i18n",d:"README 다국어 번역 — 자동 번역, 다국어 README 생성",s:"xixu-me/skills",t:"skill",i:187313,c:["dev","docs"],l:"https://www.skills.sh/xixu-me/skills/readme-i18n"},
+{n:"use-my-browser",d:"내 브라우저 사용 — 사용자 실제 브라우저 환경에서 에이전트 실행",s:"xixu-me/skills",t:"skill",i:185975,c:["dev","automation"],l:"https://www.skills.sh/xixu-me/skills/use-my-browser"},
+{n:"tzst",d:"TZST 압축 — 시간대 인식 압축 아카이브 도구",s:"xixu-me/skills",t:"skill",i:184655,c:["dev","cli"],l:"https://www.skills.sh/xixu-me/skills/tzst"},
+{n:"video-edit",d:"AI 비디오 편집 — 자르기, 병합, 자막, 전환 효과, 필터",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:183966,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/video-edit"},
+{n:"image-to-video",d:"이미지→비디오 변환 — 정지 이미지를 동영상으로 애니메이션",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:183691,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/image-to-video"},
+{n:"image-edit",d:"AI 이미지 편집 — 리터칭, 배경제거, 색보정, 합성",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:183533,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/image-edit"},
+{n:"nano-banana-2",d:"Nano Banana 2 — 경량 이미지 생성 모델, 빠른 인퍼런스",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:183307,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/nano-banana-2"},
+{n:"sleek-design-mobile-apps",d:"모바일 앱 슬릭 디자인 — iOS/Android 네이티브 느낌 UI",s:"sleekdotdesign/agent-skills",t:"skill",i:182292,c:["frontend","design"],l:"https://www.skills.sh/sleekdotdesign/agent-skills/sleek-design-mobile-apps"},
+{n:"to-prd",d:"PRD 작성 — 대화 컨텍스트를 제품 요구사항 문서로 변환",s:"mattpocock/skills",t:"skill",i:179496,c:["dev","planning"],l:"https://www.skills.sh/mattpocock/skills/to-prd"},
+{n:"gpt-image-2",d:"GPT Image 2 — 고품질 AI 이미지 생성, 프롬프트 엔지니어링",s:"agentspace-so/agent-skills",t:"skill",i:175476,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/agent-skills/gpt-image-2"},
+{n:"to-issues",d:"이슈 분해 — PRD/계획을 독립적인 GitHub 이슈로 분할",s:"mattpocock/skills",t:"skill",i:172216,c:["dev","planning"],l:"https://www.skills.sh/mattpocock/skills/to-issues"},
+{n:"diagnose",d:"버그 진단 루프 — 재현→최소화→가설→계측→수정→회귀테스트",s:"mattpocock/skills",t:"skill",i:171677,c:["dev","testing"],l:"https://www.skills.sh/mattpocock/skills/diagnose"},
+{n:"azure-cost",d:"Azure 비용 분석 — 리소스별 비용, 예산 알림, 최적화 추천",s:"microsoft/azure-skills",t:"skill",i:170250,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-cost"},
+{n:"lark-approval",d:"Lark 결재 — 결재선 생성, 승인/반려, 결재 이력",s:"larksuite/cli",t:"skill",i:167585,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-approval"},
+{n:"write-a-skill",d:"스킬 작성법 — 구조, 프로그레시브 디스클로저, 리소스 번들링",s:"mattpocock/skills",t:"skill",i:166345,c:["dev","meta"],l:"https://www.skills.sh/mattpocock/skills/write-a-skill"},
+{n:"zoom-out",d:"줌아웃 — 코드의 큰 그림 보기, 전체 아키텍처 이해",s:"mattpocock/skills",t:"skill",i:165927,c:["dev","architecture"],l:"https://www.skills.sh/mattpocock/skills/zoom-out"},
+{n:"setup-matt-pocock-skills",d:"Matt Pocock 스킬 초기 설정 — 이슈 트래커, 트리아지, 도메인 연결",s:"mattpocock/skills",t:"skill",i:164724,c:["dev","setup"],l:"https://www.skills.sh/mattpocock/skills/setup-matt-pocock-skills"},
+{n:"lark-approval (feishu)",d:"비자루 결재 — 결재 워크플로우 생성, 승인/반려",s:"open.feishu.cn",t:"skill",i:162711,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-approval"},
+{n:"lark-doc (feishu)",d:"비자루 문서 — 리치 텍스트 문서 생성·편집",s:"open.feishu.cn",t:"skill",i:162568,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-doc"},
+{n:"lark-base (feishu)",d:"비자루 Base — 데이터베이스 레코드 관리",s:"open.feishu.cn",t:"skill",i:162545,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-base"},
+{n:"lark-calendar (feishu)",d:"비자루 캘린더 — 일정 생성·조회",s:"open.feishu.cn",t:"skill",i:162530,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-calendar"},
+{n:"lark-contact (feishu)",d:"비자루 연락처 — 조직도, 외부 연락처 관리",s:"open.feishu.cn",t:"skill",i:162508,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-contact"},
+{n:"lark-drive (feishu)",d:"비자루 드라이브 — 파일 관리, 권한 설정",s:"open.feishu.cn",t:"skill",i:162507,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-drive"},
+{n:"lark-attendance (feishu)",d:"비자루 근태 — 출퇴근, 휴가, 근태 기록",s:"open.feishu.cn",t:"skill",i:162504,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-attendance"},
+{n:"lark-im (feishu)",d:"비자루 메신저 — 메시지 발송, 채팅방 관리",s:"open.feishu.cn",t:"skill",i:162498,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-im"},
+{n:"lark-shared (feishu)",d:"비자루 공유 — 링크 생성, 외부 공유",s:"open.feishu.cn",t:"skill",i:162496,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-shared"},
+{n:"lark-mail (feishu)",d:"비자루 메일 — 이메일 발송, 수신함 관리",s:"open.feishu.cn",t:"skill",i:162459,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-mail"},
+{n:"lark-event (feishu)",d:"비자루 이벤트 — 이벤트 생성, RSVP",s:"open.feishu.cn",t:"skill",i:162454,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-event"},
+{n:"lark-minutes (feishu)",d:"비자루 회의록 — AI 회의 요약",s:"open.feishu.cn",t:"skill",i:162441,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-minutes"},
+{n:"lark-sheets (feishu)",d:"비자루 시트 — 스프레드시트 관리",s:"open.feishu.cn",t:"skill",i:162433,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-sheets"},
+{n:"lark-openapi-explorer (feishu)",d:"비자루 OpenAPI 탐색기 — API 스펙 조회",s:"open.feishu.cn",t:"skill",i:162427,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-openapi-explorer"},
+{n:"lark-task (feishu)",d:"비자루 태스크 — 작업 관리, 칸반보드",s:"open.feishu.cn",t:"skill",i:162410,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-task"},
+{n:"lark-wiki (feishu)",d:"비자루 위키 — 지식베이스 관리",s:"open.feishu.cn",t:"skill",i:162404,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-wiki"},
+{n:"lark-skill-maker (feishu)",d:"비자루 스킬 메이커 — 커스텀 스킬 생성",s:"open.feishu.cn",t:"skill",i:162391,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-skill-maker"},
+{n:"lark-slides (feishu)",d:"비자루 슬라이드 — 프레젠테이션 생성·편집",s:"open.feishu.cn",t:"skill",i:162390,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-slides"},
+{n:"lark-whiteboard (feishu)",d:"비자루 화이트보드 — 실시간 협업 캔버스",s:"open.feishu.cn",t:"skill",i:162388,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-whiteboard"},
+{n:"lark-vc (feishu)",d:"비자루 비디오 회의 — 회의 생성, 녹화",s:"open.feishu.cn",t:"skill",i:162371,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-vc"},
+{n:"lark-standup-report (feishu)",d:"비자루 스탠드업 리포트 — 일일 스탠드업 자동 생성",s:"open.feishu.cn",t:"skill",i:162356,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-workflow-standup-report"},
+{n:"lark-meeting-summary (feishu)",d:"비자루 회의 요약 — 자동 회의록 파이프라인",s:"open.feishu.cn",t:"skill",i:162338,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-workflow-meeting-summary"},
+{n:"caveman (mattpocock)",d:"초압축 모드 (MattPocock판) — 토큰 절약 커뮤니케이션",s:"mattpocock/skills",t:"skill",i:161232,c:["dev","productivity"],l:"https://www.skills.sh/mattpocock/skills/caveman"},
+{n:"kling-3-0",d:"Kling 3.0 — 최신 AI 비디오 생성 모델, 고품질 영상",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:159486,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/kling-3-0"},
+{n:"triage",d:"이슈 트리아지 — 상태기반 워크플로우로 이슈 관리",s:"mattpocock/skills",t:"skill",i:153269,c:["dev","planning"],l:"https://www.skills.sh/mattpocock/skills/triage"},
+{n:"codex-pet",d:"Codex Pet — AI 펫 캐릭터 생성, 애니메이션",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:148083,c:["ai-media","fun"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/codex-pet"},
+{n:"lark-slides",d:"Lark 슬라이드 — 프레젠테이션 생성·편집",s:"larksuite/cli",t:"skill",i:147380,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-slides"},
+{n:"lark-attendance",d:"Lark 근태 — 출퇴근, 휴가, 근태 기록 관리",s:"larksuite/cli",t:"skill",i:146514,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-attendance"},
+{n:"impeccable",d:"SVG 애니메이션 & 디자인 도구 — 감사, 비평, 최적화",s:"pbakaus/impeccable",t:"skill",i:145722,c:["frontend","design"],l:"https://www.skills.sh/pbakaus/impeccable/impeccable"},
+{n:"lark-okr (feishu)",d:"비자루 OKR — 목표·핵심결과 관리",s:"open.feishu.cn",t:"skill",i:143342,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-okr"},
+{n:"develop-userscripts",d:"유저스크립트 개발 — Tampermonkey/Greasemonkey 스크립트 작성",s:"xixu-me/skills",t:"skill",i:141745,c:["dev","browser"],l:"https://www.skills.sh/xixu-me/skills/develop-userscripts"},
+{n:"paper-context-resolver",d:"AI 논문 컨텍스트 해석 — 논문 배경지식 자동 추출",s:"lllllllama/ai-paper-reproduction-skill",t:"skill",i:139967,c:["dev","research"],l:"https://www.skills.sh/lllllllama/ai-paper-reproduction-skill/paper-context-resolver"},
+{n:"repo-intake-and-plan",d:"저장소 인테이크 — 코드 분석, 구조 파악, 계획 수립",s:"lllllllama/ai-paper-reproduction-skill",t:"skill",i:139634,c:["dev","planning"],l:"https://www.skills.sh/lllllllama/ai-paper-reproduction-skill/repo-intake-and-plan"},
+{n:"env-and-assets-bootstrap",d:"환경 & 자산 부트스트랩 — 프로젝트 초기 설정 자동화",s:"lllllllama/ai-paper-reproduction-skill",t:"skill",i:139613,c:["dev","setup"],l:"https://www.skills.sh/lllllllama/ai-paper-reproduction-skill/env-and-assets-bootstrap"},
+{n:"minimal-run-and-audit",d:"최소 실행 & 감사 — 코드 실행, 결과 검증",s:"lllllllama/ai-paper-reproduction-skill",t:"skill",i:139606,c:["dev","testing"],l:"https://www.skills.sh/lllllllama/ai-paper-reproduction-skill/minimal-run-and-audit"},
+{n:"vercel-react-native-skills",d:"React Native 모범 사례 — 네이티브 모듈, 네비게이션, 성능",s:"vercel-labs/agent-skills",t:"skill",i:133536,c:["frontend","react"],l:"https://www.skills.sh/vercel-labs/agent-skills/vercel-react-native-skills"},
+{n:"pptx",d:"PowerPoint 자동 생성 — 슬라이드, 차트, 이미지, 템플릿",s:"anthropics/skills",t:"skill",i:132944,c:["docs","office"],l:"https://www.skills.sh/anthropics/skills/pptx"},
+{n:"lark-okr",d:"Lark OKR — 목표·핵심결과 설정, 진행률 추적",s:"larksuite/cli",t:"skill",i:131887,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-okr"},
+{n:"caveman-commit",d:"초압축 커밋 메시지 — 간결한 Git 커밋 작성",s:"juliusbrussee/caveman",t:"skill",i:128925,c:["dev","git"],l:"https://www.skills.sh/juliusbrussee/caveman/caveman-commit"},
+{n:"lark-markdown (feishu)",d:"비자루 마크다운 — 마크다운 문서 Lark 동기화",s:"open.feishu.cn",t:"skill",i:128077,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-markdown"},
+{n:"caveman-review",d:"초압축 코드 리뷰 — 간결한 리뷰 코멘트 작성",s:"juliusbrussee/caveman",t:"skill",i:127656,c:["dev","git"],l:"https://www.skills.sh/juliusbrussee/caveman/caveman-review"},
+{n:"ai-image-generation",d:"AI 이미지 생성 — 텍스트→이미지, 다양한 스타일",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:127473,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/ai-image-generation"},
+{n:"seo-audit",d:"SEO 감사 — 메타 태그, 구조화 데이터, 페이지 속도, 키워드 분석",s:"coreyhaines31/marketingskills",t:"skill",i:127424,c:["marketing","seo"],l:"https://www.skills.sh/coreyhaines31/marketingskills/seo-audit"},
+{n:"ai-video-generation",d:"AI 비디오 생성 — 텍스트/이미지→동영상, 다양한 모델",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:127358,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/ai-video-generation"},
+{n:"runcomfy-cli",d:"RunComfy CLI — ComfyUI 워크플로우 실행, 이미지/비디오 생성",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:126929,c:["ai-media","cli"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/runcomfy-cli"},
+{n:"systematic-debugging",d:"체계적 디버깅 — 재현, 격리, 가설검증, 수정, 회귀테스트",s:"obra/superpowers",t:"skill",i:126725,c:["dev","testing"],l:"https://www.skills.sh/obra/superpowers/systematic-debugging"},
+{n:"face-swap",d:"페이스 스왑 — 얼굴 교체, AI 아바타 제작",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:126580,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/face-swap"},
+{n:"ai-avatar-video",d:"AI 아바타 비디오 — 가상 인물 영상 생성",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:126527,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/ai-avatar-video"},
+{n:"caveman-compress",d:"초압축 — 모든 출력을 극한으로 압축",s:"juliusbrussee/caveman",t:"skill",i:126044,c:["dev","productivity"],l:"https://www.skills.sh/juliusbrussee/caveman/caveman-compress"},
+{n:"prototype",d:"프로토타이핑 — 상태/비즈니스 로직 또는 UI 변형 탐색",s:"mattpocock/skills",t:"skill",i:125835,c:["dev","design"],l:"https://www.skills.sh/mattpocock/skills/prototype"},
+{n:"image-inpainting",d:"이미지 인페인팅 — 이미지 내 영역 복원·수정",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:124516,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/image-inpainting"},
+{n:"video-inpainting",d:"비디오 인페인팅 — 영상 내 영역 복원·제거",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:124302,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/video-inpainting"},
+{n:"controlnet-pose",d:"ControlNet 포즈 제어 — 자세 기반 이미지 생성",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:124206,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/controlnet-pose"},
+{n:"lipsync",d:"립싱크 — 입모양 동기화, 음성-영상 합성",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:124189,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/lipsync"},
+{n:"video-extend",d:"비디오 확장 — 영상 길이 연장, 자연스러운 연결",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:124025,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/video-extend"},
+{n:"image-outpainting",d:"이미지 아웃페인팅 — 이미지 외곽 확장",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:123756,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/image-outpainting"},
+{n:"relight",d:"릴라이트 — 이미지 조명 재설정, 그림자 조정",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:123671,c:["ai-media","image"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/relight"},
+{n:"video-outpainting",d:"비디오 아웃페인팅 — 영상 외곽 확장",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:123549,c:["ai-media","video"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/video-outpainting"},
+{n:"elevenlabs-music-generation",d:"ElevenLabs 음악 생성 — AI 배경음악, BGM, 효과음",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:123407,c:["ai-media","audio"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/elevenlabs-music-generation"},
+{n:"just-scrape",d:"AI 웹 스크래핑 — 웹페이지 데이터 자동 추출, 구조화",s:"scrapegraphai/just-scrape",t:"skill",i:121847,c:["dev","automation"],l:"https://www.skills.sh/scrapegraphai/just-scrape/just-scrape"},
+{n:"caveman-help",d:"초압축 도움말 — caveman 명령어 사용법",s:"juliusbrussee/caveman",t:"skill",i:121662,c:["dev","productivity"],l:"https://www.skills.sh/juliusbrussee/caveman/caveman-help"},
+{n:"extract-design-system",d:"디자인 시스템 추출 — 기존 코드에서 토큰, 컴포넌트 추출",s:"arvindrk/extract-design-system",t:"skill",i:121502,c:["frontend","design"],l:"https://www.skills.sh/arvindrk/extract-design-system/extract-design-system"},
+{n:"handoff",d:"핸드오프 — 작업 인계 문서 자동 생성",s:"mattpocock/skills",t:"skill",i:119895,c:["dev","docs"],l:"https://www.skills.sh/mattpocock/skills/handoff"},
+{n:"copywriting",d:"마케팅 카피라이팅 — 헤드라인, CTA, 이메일, 랜딩페이지 카피",s:"coreyhaines31/marketingskills",t:"skill",i:117023,c:["marketing","content"],l:"https://www.skills.sh/coreyhaines31/marketingskills/copywriting"},
+{n:"ace-step",d:"Ace Step — AI 음악 생성, 스텝 시퀀서",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:115471,c:["ai-media","audio"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/ace-step"},
+{n:"airunway-aks-setup",d:"AKS 설정 — Azure Kubernetes Service 클러스터 구성",s:"microsoft/azure-skills",t:"skill",i:115372,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/airunway-aks-setup"},
+{n:"ai-music",d:"AI 음악 생성 — 텍스트→음악, 장르/분위기 지정",s:"agentspace-so/runcomfy-agent-skills",t:"skill",i:115086,c:["ai-media","audio"],l:"https://www.skills.sh/agentspace-so/runcomfy-agent-skills/ai-music"},
+{n:"docx",d:"Word 문서 자동 생성 — 표, 차트, 스타일, 템플릿",s:"anthropics/skills",t:"skill",i:113995,c:["docs","office"],l:"https://www.skills.sh/anthropics/skills/docx"},
+{n:"requesting-code-review",d:"코드 리뷰 요청 — 효과적인 리뷰 요청 작성법",s:"obra/superpowers",t:"skill",i:112991,c:["dev","review"],l:"https://www.skills.sh/obra/superpowers/requesting-code-review"},
+{n:"test-driven-development",d:"TDD 패턴 — 테스트 주도 개발 워크플로우 (obra판)",s:"obra/superpowers",t:"skill",i:111419,c:["dev","testing"],l:"https://www.skills.sh/obra/superpowers/test-driven-development"},
+{n:"lark-markdown",d:"Lark 마크다운 — 마크다운 문서 Lark 동기화",s:"larksuite/cli",t:"skill",i:110272,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-markdown"},
+{n:"lark-vc-agent (feishu)",d:"비자루 VC 에이전트 — AI 회의 어시스턴트",s:"open.feishu.cn",t:"skill",i:107322,c:["collab","lark"],l:"https://www.skills.sh/open.feishu.cn/lark-vc-agent"},
+{n:"design-taste-frontend",d:"프론트엔드 디자인 테스트 — UI 퀄리티 평가, 개선 제안",s:"leonxlnx/taste-skill",t:"skill",i:106635,c:["frontend","design"],l:"https://www.skills.sh/leonxlnx/taste-skill/design-taste-frontend"},
+{n:"supabase",d:"Supabase 통합 — 인증, DB, 스토리지, 실시간, 함수",s:"supabase/agent-skills",t:"skill",i:103670,c:["cloud","database"],l:"https://www.skills.sh/supabase/agent-skills/supabase"},
+{n:"xlsx",d:"Excel 스프레드시트 자동 생성 — 표, 차트, 수식, 피벗",s:"anthropics/skills",t:"skill",i:100975,c:["docs","office"],l:"https://www.skills.sh/anthropics/skills/xlsx"},
+{n:"next-best-practices",d:"Next.js 모범 사례 — App Router, SSR, 캐싱, 라우팅",s:"vercel-labs/next-skills",t:"skill",i:99170,c:["frontend","react"],l:"https://www.skills.sh/vercel-labs/next-skills/next-best-practices"},
+{n:"azure-observability",d:"Azure 관측가능성 — 모니터링, 메트릭, 트레이싱, 로깅",s:"microsoft/azure-skills",t:"skill",i:98141,c:["cloud","azure"],l:"https://www.skills.sh/microsoft/azure-skills/azure-observability"},
+{n:"subagent-driven-development",d:"서브에이전트 주도 개발 — 병렬 작업 분산, 집중 탐색",s:"obra/superpowers",t:"skill",i:96376,c:["dev","architecture"],l:"https://www.skills.sh/obra/superpowers/subagent-driven-development"},
+{n:"receiving-code-review",d:"코드 리뷰 수용 — 피드백 반영, 개선 커밋 작성",s:"obra/superpowers",t:"skill",i:90749,c:["dev","review"],l:"https://www.skills.sh/obra/superpowers/receiving-code-review"},
+{n:"high-end-visual-design",d:"하이엔드 비주얼 디자인 — 프리미엄 UI/UX 가이드",s:"leonxlnx/taste-skill",t:"skill",i:90174,c:["frontend","design"],l:"https://www.skills.sh/leonxlnx/taste-skill/high-end-visual-design"},
+{n:"gpt-image-2 (runcomfy)",d:"GPT Image 2 (RunComfy판) — 고품질 이미지 생성",s:"runcomfy-com/skills",t:"skill",i:88385,c:["ai-media","image"],l:"https://www.skills.sh/runcomfy-com/skills/gpt-image-2"},
+{n:"redesign-existing-projects",d:"기존 프로젝트 리디자인 — UI/UX 개선, 모던화",s:"leonxlnx/taste-skill",t:"skill",i:88289,c:["frontend","design"],l:"https://www.skills.sh/leonxlnx/taste-skill/redesign-existing-projects"},
+{n:"image-outpainting (doany)",d:"이미지 아웃페인팅 (DoAny판) — 이미지 외곽 확장",s:"doany-ai/skills",t:"skill",i:88243,c:["ai-media","image"],l:"https://www.skills.sh/doany-ai/skills/image-outpainting"},
+{n:"video-edit (runcomfy)",d:"비디오 편집 (RunComfy판) — 자르기, 병합, 자막",s:"runcomfy-com/skills",t:"skill",i:88225,c:["ai-media","video"],l:"https://www.skills.sh/runcomfy-com/skills/video-edit"},
+{n:"image-to-video (runcomfy)",d:"이미지→비디오 (RunComfy판) — 정지화상→동영상",s:"runcomfy-com/skills",t:"skill",i:88138,c:["ai-media","video"],l:"https://www.skills.sh/runcomfy-com/skills/image-to-video"},
+{n:"gpt-image-2 (doany)",d:"GPT Image 2 (DoAny판) — 이미지 생성",s:"doany-ai/skills",t:"skill",i:88121,c:["ai-media","image"],l:"https://www.skills.sh/doany-ai/skills/gpt-image-2"},
+{n:"ai-avatar-video (doany)",d:"AI 아바타 비디오 (DoAny판) — 가상 인물 영상",s:"doany-ai/skills",t:"skill",i:88095,c:["ai-media","video"],l:"https://www.skills.sh/doany-ai/skills/ai-avatar-video"},
+{n:"ai-image-generation (runcomfy)",d:"AI 이미지 생성 (RunComfy판)",s:"runcomfy-com/skills",t:"skill",i:88083,c:["ai-media","image"],l:"https://www.skills.sh/runcomfy-com/skills/ai-image-generation"},
+{n:"video-edit (doany)",d:"비디오 편집 (DoAny판) — 자르기, 병합",s:"doany-ai/skills",t:"skill",i:88081,c:["ai-media","video"],l:"https://www.skills.sh/doany-ai/skills/video-edit"},
+{n:"ai-image-generation (doany)",d:"AI 이미지 생성 (DoAny판)",s:"doany-ai/skills",t:"skill",i:88034,c:["ai-media","image"],l:"https://www.skills.sh/doany-ai/skills/ai-image-generation"},
+{n:"image-to-video (doany)",d:"이미지→비디오 (DoAny판)",s:"doany-ai/skills",t:"skill",i:88032,c:["ai-media","video"],l:"https://www.skills.sh/doany-ai/skills/image-to-video"},
+{n:"ai-video-generation (runcomfy)",d:"AI 비디오 생성 (RunComfy판)",s:"runcomfy-com/skills",t:"skill",i:88014,c:["ai-media","video"],l:"https://www.skills.sh/runcomfy-com/skills/ai-video-generation"},
+{n:"ai-video-generation (doany)",d:"AI 비디오 생성 (DoAny판)",s:"doany-ai/skills",t:"skill",i:87979,c:["ai-media","video"],l:"https://www.skills.sh/doany-ai/skills/ai-video-generation"},
+{n:"image-edit (runcomfy)",d:"이미지 편집 (RunComfy판) — 리터칭, 배경제거",s:"runcomfy-com/skills",t:"skill",i:87898,c:["ai-media","image"],l:"https://www.skills.sh/runcomfy-com/skills/image-edit"},
+{n:"image-edit (doany)",d:"이미지 편집 (DoAny판)",s:"doany-ai/skills",t:"skill",i:87893,c:["ai-media","image"],l:"https://www.skills.sh/doany-ai/skills/image-edit"},
+{n:"nano-banana-2 (runcomfy)",d:"Nano Banana 2 (RunComfy판) — 경량 이미지 생성",s:"runcomfy-com/skills",t:"skill",i:87861,c:["ai-media","image"],l:"https://www.skills.sh/runcomfy-com/skills/nano-banana-2"},
+{n:"image-outpainting (runcomfy)",d:"이미지 아웃페인팅 (RunComfy판)",s:"runcomfy-com/skills",t:"skill",i:87839,c:["ai-media","image"],l:"https://www.skills.sh/runcomfy-com/skills/image-outpainting"},
+{n:"ai-avatar-video (runcomfy)",d:"AI 아바타 비디오 (RunComfy판)",s:"runcomfy-com/skills",t:"skill",i:87770,c:["ai-media","video"],l:"https://www.skills.sh/runcomfy-com/skills/ai-avatar-video"},
+{n:"webapp-testing",d:"웹앱 테스트 — E2E, 유닛, 비주얼 회귀 테스트",s:"anthropics/skills",t:"skill",i:87701,c:["dev","testing"],l:"https://www.skills.sh/anthropics/skills/webapp-testing"},
+{n:"marketing-psychology",d:"소비자 심리학 마케팅 — 설득, 신뢰, 행동 유도 패턴",s:"coreyhaines31/marketingskills",t:"skill",i:86336,c:["marketing","content"],l:"https://www.skills.sh/coreyhaines31/marketingskills/marketing-psychology"},
+{n:"finishing-a-development-branch",d:"개발 브랜치 마무리 — 리베이스, 스쿼시, PR 작성",s:"obra/superpowers",t:"skill",i:85954,c:["dev","git"],l:"https://www.skills.sh/obra/superpowers/finishing-a-development-branch"},
+{n:"critique",d:"디자인 비평 — UI/UX 작품 집중 분석, 개선 제안",s:"pbakaus/impeccable",t:"skill",i:83322,c:["frontend","design"],l:"https://www.skills.sh/pbakaus/impeccable/critique"},
+{n:"lark-vc-agent",d:"Lark VC 에이전트 — AI 회의 어시스턴트",s:"larksuite/cli",t:"skill",i:83079,c:["collab","lark"],l:"https://www.skills.sh/larksuite/cli/lark-vc-agent"},
+{n:"minimalist-ui",d:"미니멀 UI — 심플하고 깔끔한 인터페이스 디자인",s:"leonxlnx/taste-skill",t:"skill",i:82644,c:["frontend","design"],l:"https://www.skills.sh/leonxlnx/taste-skill/minimalist-ui"},
+{n:"hyperframes",d:"인터랙티브 애니메이션 프레임 — 웹사이트→애니메이션",s:"heygen-com/hyperframes",t:"skill",i:82563,c:["ai-media","animation"],l:"https://www.skills.sh/heygen-com/hyperframes/hyperframes"},
+{n:"audit",d:"SVG 감사 — 벡터 그래픽 최적화, 접근성 점검",s:"pbakaus/impeccable",t:"skill",i:82530,c:["frontend","design"],l:"https://www.skills.sh/pbakaus/impeccable/audit"},
+{n:"animate",d:"SVG 애니메이션 — 벡터 그래픽 모션, 인터랙션",s:"pbakaus/impeccable",t:"skill",i:82409,c:["frontend","design"],l:"https://www.skills.sh/pbakaus/impeccable/animate"},
+{n:"content-strategy",d:"콘텐츠 전략 — 콘텐츠 기획, 캘린더, 퍼널 설계",s:"coreyhaines31/marketingskills",t:"skill",i:81821,c:["marketing","content"],l:"https://www.skills.sh/coreyhaines31/marketingskills/content-strategy"},
+{n:"optimize",d:"SVG 최적화 — 파일 크기, 렌더링 성능 개선",s:"pbakaus/impeccable",t:"skill",i:81736,c:["frontend","design"],l:"https://www.skills.sh/pbakaus/impeccable/optimize"},
+{n:"distill",d:"SVG 증류 — 불필요한 요소 제거, 핵심만 남기기",s:"pbakaus/impeccable",t:"skill",i:80127,c:["frontend","design"],l:"https://www.skills.sh/pbakaus/impeccable/distill"},
+{n:"full-output-enforcement",d:"전체 출력 강제 — AI가 생략 없이 완전한 코드 출력",s:"leonxlnx/taste-skill",t:"skill",i:79763,c:["dev","productivity"],l:"https://www.skills.sh/leonxlnx/taste-skill/full-output-enforcement"},
+{n:"cavecrew",d:"CaveCrew — 팀용 초압축 모드, 다중 에이전트 협업",s:"juliusbrussee/caveman",t:"skill",i:79667,c:["dev","productivity"],l:"https://www.skills.sh/juliusbrussee/caveman/cavecrew"},
+{n:"caveman-stats",d:"초압축 통계 — 토큰 절약량, 사용량 분석",s:"juliusbrussee/caveman",t:"skill",i:79562,c:["dev","productivity"],l:"https://www.skills.sh/juliusbrussee/caveman/caveman-stats"},
+{n:"programmatic-seo",d:"프로그래매틱 SEO — 대량 페이지 자동 생성, 템플릿 SEO",s:"coreyhaines31/marketingskills",t:"skill",i:79254,c:["marketing","seo"],l:"https://www.skills.sh/coreyhaines31/marketingskills/programmatic-seo"},
+{n:"hyperframes-cli",d:"Hyperframes CLI — 명령줄에서 애니메이션 프레임 생성",s:"heygen-com/hyperframes",t:"skill",i:78272,c:["ai-media","animation"],l:"https://www.skills.sh/heygen-com/hyperframes/hyperframes-cli"},
+{n:"gsap",d:"GSAP 애니메이션 — 고성능 웹 애니메이션 라이브러리",s:"heygen-com/hyperframes",t:"skill",i:78005,c:["frontend","animation"],l:"https://www.skills.sh/heygen-com/hyperframes/gsap"},
+{n:"industrial-brutalist-ui",d:"인더스트리얼 브루탈리스트 UI — 강렬한 디자인 스타일",s:"leonxlnx/taste-skill",t:"skill",i:76835,c:["frontend","design"],l:"https://www.skills.sh/leonxlnx/taste-skill/industrial-brutalist-ui"},
+{n:"marketing-ideas",d:"마케팅 아이디어 — 창의적 캠페인, 프로모션 기획",s:"coreyhaines31/marketingskills",t:"skill",i:76800,c:["marketing","content"],l:"https://www.skills.sh/coreyhaines31/marketingskills/marketing-ideas"},
+{n:"stitch-design-taste",d:"스티치 디자인 테이스트 — Vercel v0 스타일 UI 생성",s:"leonxlnx/taste-skill",t:"skill",i:76459,c:["frontend","design"],l:"https://www.skills.sh/leonxlnx/taste-skill/stitch-design-taste"},
+{n:"website-to-hyperframes",d:"웹사이트→하이퍼프레임 — 기존 사이트를 애니메이션으로",s:"heygen-com/hyperframes",t:"skill",i:75686,c:["ai-media","animation"],l:"https://www.skills.sh/heygen-com/hyperframes/website-to-hyperframes"},
+{n:"hyperframes-registry",d:"하이퍼프레임 레지스트리 — 애니메이션 템플릿 카탈로그",s:"heygen-com/hyperframes",t:"skill",i:75598,c:["ai-media","animation"],l:"https://www.skills.sh/heygen-com/hyperframes/hyperframes-registry"},
+{n:"firebase-basics",d:"Firebase 기본 — 인증, Firestore, 스토리지, 호스팅",s:"firebase/agent-skills",t:"skill",i:72393,c:["cloud","database"],l:"https://www.skills.sh/firebase/agent-skills/firebase-basics"},
+
+// ===== awesome-mcp-korea (MCP 서버) =====
+{n:"korean-law-mcp",d:"국가법령정보 API 기반 법령·판례·행정규칙 검색·조회·분석",s:"chrisryugj/korean-law-mcp",t:"mcp",i:null,c:["korea","law"],l:"https://github.com/chrisryugj/korean-law-mcp"},
+{n:"mcp-kr-legislation",d:"법제처 OPEN API 통합 법령·판례·자치법규·조약 조회",s:"ChangooLee/mcp-kr-legislation",t:"mcp",i:null,c:["korea","law"],l:"https://github.com/ChangooLee/mcp-kr-legislation"},
+{n:"assembly-api-mcp",d:"국회 Open API — 의원·의안·회의록·청원·예산 조회",s:"hollobit/assembly-api-mcp",t:"mcp",i:null,c:["korea","law"],l:"https://github.com/hollobit/assembly-api-mcp"},
+{n:"law-mcp",d:"open.law.go.kr API로 한국 법령 데이터 조회",s:"finalchild/law-mcp",t:"mcp",i:null,c:["korea","law"],l:"https://github.com/finalchild/law-mcp"},
+{n:"koregx",d:"헬스케어 법령·행정해석·식약처·HIRA 결정 통합 조회",s:"DrMoony/koregx",t:"mcp",i:null,c:["korea","law","health"],l:"https://github.com/DrMoony/koregx"},
+{n:"lawtutor-mcp",d:"7급 공무원시험 행정법·헌법 학습용 RAG 검색",s:"seung23/lawtutor-mcp",t:"mcp",i:null,c:["korea","law"],l:"https://github.com/seung23/lawtutor-mcp"},
+{n:"LexLink-ko-mcp",d:"법령·판례 + 시맨틱 검색(aiSearch)",s:"rabqatab/LexLink-ko-mcp",t:"mcp",i:null,c:["korea","law"],l:"https://github.com/rabqatab/LexLink-ko-mcp"},
+{n:"korean-law-alio-mcp",d:"법령정보센터 + ALIO 공공기관 내부규정 검색·비교·분석",s:"workbookbulb863/korean-law-alio-mcp",t:"mcp",i:null,c:["korea","law"],l:"https://github.com/workbookbulb863/korean-law-alio-mcp"},
+{n:"korean-administrative-rule-mcp",d:"행정규칙·판례·헌재결정례 통합 검색",s:"IntelliBridge/korean-administrative-rule-mcp",t:"mcp",i:null,c:["korea","law"],l:"https://github.com/IntelliBridge/korean-administrative-rule-mcp"},
+{n:"daiso-mcp",d:"다이소 매장 검색, 상품 재고 및 가격 조회",s:"hmmhmmhm/daiso-mcp",t:"mcp",i:null,c:["korea","shopping"],l:"https://github.com/hmmhmmhm/daiso-mcp"},
+{n:"kr-pc-deals-mcp",d:"다나와·컴퓨존 PC 부품 최저가 검색, 가격 비교",s:"edward-kim-dev/kr-pc-deals-mcp",t:"mcp",i:null,c:["korea","shopping"],l:"https://github.com/edward-kim-dev/kr-pc-deals-mcp"},
+{n:"KIS_MCP_Server",d:"한국투자증권 KIS Open API 트레이딩 (주식, ETF, 선물)",s:"migusdn/KIS_MCP_Server",t:"mcp",i:null,c:["korea","finance"],l:"https://github.com/migusdn/KIS_MCP_Server"},
+{n:"kiwoom-mcp",d:"키움증권 영웅문 Open API+ 트레이딩",s:"sactho/kiwoom-mcp",t:"mcp",i:null,c:["korea","finance"],l:"https://github.com/sactho/kiwoom-mcp"},
+{n:"nh-investment-mcp",d:"NH투자증권 나무/HTS API 트레이딩",s:"jgpKOR/nh-investment-mcp",t:"mcp",i:null,c:["korea","finance"],l:"https://github.com/jgpKOR/nh-investment-mcp"},
+{n:"krecofin-mcp",d:"한국은행 경제통계시스템 API (금리, 환율, 물가 등)",s:"MinBoo1104/krecofin-mcp",t:"mcp",i:null,c:["korea","finance"],l:"https://github.com/MinBoo1104/krecofin-mcp"},
+{n:"dart-mcp",d:"금융감독원 DART API (공시, 재무제표, 사업보고서)",s:"jaemanc/dart-mcp",t:"mcp",i:null,c:["korea","finance"],l:"https://github.com/jaemanc/dart-mcp"},
+{n:"korea-irkorea-mcp",d:"국세청 홈택스/손택스 API (종합소득세, 부가세)",s:"IntelliBridge/korea-irkorea-mcp",t:"mcp",i:null,c:["korea","finance"],l:"https://github.com/IntelliBridge/korea-irkorea-mcp"},
+{n:"ks-tax-mcp",d:"국세청 현금영수증 API, 사업자등록 상태 조회",s:"nicekk/ks-tax-mcp",t:"mcp",i:null,c:["korea","finance"],l:"https://github.com/nicekk/ks-tax-mcp"},
+{n:"ks-bank-mcp",d:"오픈뱅킹 API 기반 은행 계좌 조회·이체",s:"nicekk/ks-bank-mcp",t:"mcp",i:null,c:["korea","finance"],l:"https://github.com/nicekk/ks-bank-mcp"},
+{n:"korea-public-data-mcp",d:"공공데이터포털 API 통합 검색 (날씨, 교통, 인구 등)",s:"yunjong0/ks-public-data-mcp",t:"mcp",i:null,c:["korea","public"],l:"https://github.com/yunjong0/ks-public-data-mcp"},
+{n:"korean-address-mcp",d:"도로명주소·지번주소 검색 및 좌표 변환",s:"nicekk/korean-address-mcp",t:"mcp",i:null,c:["korea","public"],l:"https://github.com/nicekk/korean-address-mcp"},
+{n:"korea-region-code-mcp",d:"법정동코드 조회 및 행정구역 정보",s:"nicekk/korea-region-code-mcp",t:"mcp",i:null,c:["korea","public"],l:"https://github.com/nicekk/korea-region-code-mcp"},
+{n:"mcp-korea-real-estate",d:"부동산 실거래가 조회 (아파트, 단독, 토지)",s:"SunYH311/mcp-korea-real-estate",t:"mcp",i:null,c:["korea","public"],l:"https://github.com/SunYH311/mcp-korea-real-estate"},
+{n:"korea-shelter-mcp",d:"전국 대피소 위치 정보 조회",s:"IntelliBridge/korea-shelter-mcp",t:"mcp",i:null,c:["korea","public"],l:"https://github.com/IntelliBridge/korea-shelter-mcp"},
+{n:"Odsay-MCP",d:"ODsay 대중교통 경로 검색 (버스, 지하철)",s:"RDWGit/Odsay-MCP",t:"mcp",i:null,c:["korea","transport"],l:"https://github.com/RDWGit/Odsay-MCP"},
+{n:"korean-subway-mcp",d:"지하철 실시간 도착 정보 및 역 정보 조회",s:"SeoNaRu/korean-subway-mcp",t:"mcp",i:null,c:["korea","transport"],l:"https://github.com/SeoNaRu/korean-subway-mcp"},
+{n:"korail-mcp",d:"코레일 API 기반 기차 예매, 운임, 시간표 조회",s:"junwoo1211/korail-mcp",t:"mcp",i:null,c:["korea","transport"],l:"https://github.com/junwoo1211/korail-mcp"},
+{n:"t-money-bus-mcp",d:"티머니 버스 도착 정보 조회",s:"nicekk/t-money-bus-mcp",t:"mcp",i:null,c:["korea","transport"],l:"https://github.com/nicekk/t-money-bus-mcp"},
+{n:"seoul-bus-mcp",d:"서울시 버스 도착 정보 및 노선 조회",s:"seung23/seoul-bus-mcp",t:"mcp",i:null,c:["korea","transport"],l:"https://github.com/seung23/seoul-bus-mcp"},
+{n:"kakaotalk-mcp",d:"카카오톡 메시지 전송 (친구, 그룹채팅)",s:"nicekk/kakaotalk-mcp",t:"mcp",i:null,c:["korea","messenger"],l:"https://github.com/nicekk/kakaotalk-mcp"},
+{n:"discord-kr-mcp",d:"디스코드 한국어 메시지 전송 및 채널 관리",s:"nicekk/discord-kr-mcp",t:"mcp",i:null,c:["korea","messenger"],l:"https://github.com/nicekk/discord-kr-mcp"},
+{n:"slack-kr-mcp",d:"슬랙 한국어 메시지 및 채널 관리",s:"nicekk/slack-kr-mcp",t:"mcp",i:null,c:["korea","messenger"],l:"https://github.com/nicekk/slack-kr-mcp"},
+{n:"telegram-kr-mcp",d:"텔레그램 한국어 메시지 및 봇 관리",s:"nicekk/telegram-kr-mcp",t:"mcp",i:null,c:["korea","messenger"],l:"https://github.com/nicekk/telegram-kr-mcp"},
+{n:"healthymap-mcp",d:"건강보험심사평가원 병원·약국 정보 및 진료과별 검색",s:"nicekk/healthymap-mcp",t:"mcp",i:null,c:["korea","health"],l:"https://github.com/nicekk/healthymap-mcp"},
+{n:"korea-pharmacy-mcp",d:"약국 정보 및 영업시간, 휴무일 조회",s:"nicekk/korea-pharmacy-mcp",t:"mcp",i:null,c:["korea","health"],l:"https://github.com/nicekk/korea-pharmacy-mcp"},
+{n:"korea-emergency-mcp",d:"전국 응급실 가용 병상 및 위치 조회",s:"IntelliBridge/korea-emergency-mcp",t:"mcp",i:null,c:["korea","health"],l:"https://github.com/IntelliBridge/korea-emergency-mcp"},
+{n:"korea-weather-mcp",d:"기상청 API 단기/중기 예보, 미세먼지 조회",s:"nicekk/korea-weather-mcp",t:"mcp",i:null,c:["korea","weather"],l:"https://github.com/nicekk/korea-weather-mcp"},
+{n:"airkorea-mcp",d:"에어코리아 대기질 정보 (미세먼지, 오존 등)",s:"nicekk/airkorea-mcp",t:"mcp",i:null,c:["korea","weather"],l:"https://github.com/nicekk/airkorea-mcp"},
+{n:"korea-earthquake-mcp",d:"기상청 지진 정보 실시간 조회",s:"IntelliBridge/korea-earthquake-mcp",t:"mcp",i:null,c:["korea","weather"],l:"https://github.com/IntelliBridge/korea-earthquake-mcp"},
+{n:"naver-search-mcp",d:"네이버 검색 API (블로그, 뉴스, 쇼핑 등)",s:"nicekk/naver-search-mcp",t:"mcp",i:null,c:["korea","dev"],l:"https://github.com/nicekk/naver-search-mcp"},
+{n:"kakao-search-mcp",d:"카카오 Daum 검색 API",s:"nicekk/kakao-search-mcp",t:"mcp",i:null,c:["korea","dev"],l:"https://github.com/nicekk/kakao-search-mcp"},
+{n:"naver-map-mcp",d:"네이버 지도 API (장소 검색, 경로, 지오코딩)",s:"nicekk/naver-map-mcp",t:"mcp",i:null,c:["korea","dev"],l:"https://github.com/nicekk/naver-map-mcp"},
+{n:"kakao-map-mcp",d:"카카오맵 API (주소 검색, 좌표 변환)",s:"nicekk/kakao-map-mcp",t:"mcp",i:null,c:["korea","dev"],l:"https://github.com/nicekk/kakao-map-mcp"},
+{n:"google-search-kr-mcp",d:"구글 검색 (한국어 특화)",s:"nicekk/google-search-kr-mcp",t:"mcp",i:null,c:["korea","dev"],l:"https://github.com/nicekk/google-search-kr-mcp"},
+
+// ===== k-skill (한국 생활 자동화) =====
+{n:"srt-booking",d:"SRT 열차 조회, 예약, 확인, 취소",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","transport"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/srt-booking.md"},
+{n:"ktx-booking",d:"KTX/코레일 열차 조회, 예약, 확인, 취소",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","transport"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/ktx-booking.md"},
+{n:"express-bus-booking",d:"KOBUS 고속버스 배차·좌석·요금 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","transport"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/express-bus-booking.md"},
+{n:"intercity-bus-booking",d:"티머니 시외버스 배차·좌석·요금 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","transport"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/intercity-bus-booking.md"},
+{n:"foresttrip-vacancy",d:"숲나들e 자연휴양림 예약 가능 객실 자동 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","travel"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/foresttrip-vacancy.md"},
+{n:"kakaotalk-mac",d:"macOS 카카오톡 대화 조회, 검색, 메시지 전송/삭제",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","messenger"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/kakaotalk-mac.md"},
+{n:"seoul-subway-arrival",d:"서울 지하철 역 실시간 도착 예정 열차",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","transport"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/seoul-subway-arrival.md"},
+{n:"seoul-density",d:"서울 121개 핫스팟 실시간 혼잡도·인구 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","public"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/seoul-density.md"},
+{n:"kis-trading",d:"한국투자증권 주식 매수/매도/조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","finance"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/kis-trading.md"},
+{n:"toss-ledger",d:"토스 가계부 조회 및 분석",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","finance"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/toss-ledger.md"},
+{n:"law-search",d:"국가법령정보 법령·판례 검색",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","law"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/law-search.md"},
+{n:"national-assembly",d:"국회 의안·회의록·의원 정보",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","law"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/national-assembly.md"},
+{n:"public-data",d:"공공데이터포털 통합 검색",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","public"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/public-data.md"},
+{n:"coupang-search",d:"쿠팡 상품 검색 및 가격 비교",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","shopping"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/coupang-search.md"},
+{n:"daiso-search",d:"다이소 상품 검색 및 재고 확인",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","shopping"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/daiso-search.md"},
+{n:"naver-shopping",d:"네이버 쇼핑 최저가 검색",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","shopping"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/naver-shopping.md"},
+{n:"naver-restaurant",d:"네이버 지도 기반 식당 검색·리뷰",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","food"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/naver-restaurant.md"},
+{n:"baemin-order",d:"배달의민족 주문 내역 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","food"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/baemin-order.md"},
+{n:"korea-weather",d:"기상청 날씨·미세먼지 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","weather"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/korea-weather.md"},
+{n:"air-quality",d:"에어코리아 실시간 대기질",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","weather"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/air-quality.md"},
+{n:"hospital-search",d:"병원·약국 정보 및 영업시간 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","health"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/hospital-search.md"},
+{n:"emergency-bed",d:"전국 응급실 가용 병상 실시간 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","health"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/emergency-bed.md"},
+{n:"skt-billing",d:"SKT 통신비 명세서 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","telecom"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/skt-billing.md"},
+{n:"kepco-bill",d:"한전 전기요금 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","telecom"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/kepco-bill.md"},
+{n:"korea-post",d:"우체국 우편·택배 배송 조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","telecom"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/korea-post.md"},
+{n:"korea-tax",d:"홈택스 세금 신고·조회",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","finance"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/korea-tax.md"},
+{n:"notion-kr",d:"한국어 Notion 페이지 읽기·쓰기",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","docs"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/notion-kr.md"},
+{n:"google-docs-kr",d:"구글 문서 한국어 읽기·쓰기",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","docs"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/google-docs-kr.md"},
+{n:"hwp-reader",d:"한글(.hwp) 파일 읽기",s:"NomaDamas/k-skill",t:"k-skill",i:null,c:["korea","docs"],l:"https://github.com/NomaDamas/k-skill/blob/main/docs/features/hwp-reader.md"},
+];
+
+// ===========================
+// CATEGORY DEFINITIONS
+// ===========================
+const CATS={
+"frontend":{icon:"🎨",label:"프론트엔드/UI"},
+"dev":{icon:"🔧",label:"개발/아키텍처"},
+"ai-media":{icon:"🖼️",label:"AI 미디어"},
+"marketing":{icon:"📣",label:"마케팅/콘텐츠"},
+"cloud":{icon:"☁️",label:"클라우드/인프라"},
+"docs":{icon:"📄",label:"문서 포맷"},
+"collab":{icon:"📱",label:"협업/Lark"},
+"korea":{icon:"🇰🇷",label:"한국 특화"},
+};
+
+// ===========================
+// WORKFLOW RECIPES
+// ===========================
+const WFS=[
+{cat:"marketing",title:"📣 블로그 글 자동 작성 & 발행",desc:"키워드 리서치 → SEO → 카피라이팅 → 이미지 → 발행 → 홍보",
+flow:["🔍 키워드","📊 SEO 감사","✍️ 카피라이팅","🖼️ 이미지","📝 발행","📱 홍보"],
+tools:["seo-audit","copywriting","content-strategy","gpt-image-2","kakaotalk-mcp","naver-search-mcp"]},
+{cat:"marketing",title:"📣 SNS 콘텐츠 자동 생성 스튜디오",desc:"아이디어 → 심리학 적용 → 이미지/영상 → 채널 발행",
+flow:["💡 아이디어","🧠 심리학","🎨 이미지/영상","✂️ 편집","📱 발행"],
+tools:["marketing-ideas","marketing-psychology","ai-image-generation","video-edit","lipsync"]},
+{cat:"marketing",title:"📣 이메일 마케팅 캠페인",desc:"고객 세분화 → 이메일 작성 → 발송 → 분석 → 후속",
+flow:["👥 세분화","✍️ 카피","📧 발송","📊 분석","🔄 후속"],
+tools:["copywriting","marketing-psychology","content-strategy","lark-mail"]},
+{cat:"sales",title:"💰 견적서 → 세금계산서 자동 발행",desc:"문의 → 견적서 → 승인 → 세금계산서 → 이메일/카톡 발송",
+flow:["📩 문의","📄 견적서","✅ 승인","🧾 세금계산서","📧 이메일","💬 카톡"],
+tools:["docx","xlsx","korea-tax","ks-bank-mcp","kakaotalk-mcp"]},
+{cat:"sales",title:"💰 미팅 → 액션아이템 → 후속 관리",desc:"회의 녹음 → 전사 → Notion → 액션 추출 → 카톡 알림 → 캘린더",
+flow:["🎙️ 녹음","📝 전사","📓 Notion","✅ 액션","💬 카톡","📅 캘린더"],
+tools:["lark-minutes","kakaotalk-mac","lark-calendar","lark-doc"]},
+{cat:"content",title:"✍️ 유튜브 영상 제작 자동화",desc:"기획 → 대본 → AI 아바타 → 편집 → 썸네일 → BGM → 업로드",
+flow:["💡 기획","🎬 아바타","✂️ 편집","🖼️ 썸네일","🎵 BGM","📺 업로드"],
+tools:["ai-avatar-video","video-edit","gpt-image-2","elevenlabs-music-generation","lipsync"]},
+{cat:"content",title:"✍️ 제안서/프레젠테이션 자동 생성",desc:"요구사항 → PRD → 디자인 → PPT/PDF → 발송",
+flow:["📋 요구사항","🏗️ PRD","🎨 디자인","📊 PPT","📄 PDF","📧 발송"],
+tools:["to-prd","frontend-design","pptx","docx","kakaotalk-mcp"]},
+{cat:"finance",title:"📊 월간 매출 집계 & 세무 신고",desc:"거래내역 → 엑셀 → 비용분류 → 세금계산서 대사 → 부가세 → 홈택스",
+flow:["🏦 거래내역","📈 엑셀","🏷️ 비용분류","🧾 대사","📋 부가세","💻 홈택스"],
+tools:["ks-bank-mcp","ks-tax-mcp","korea-irkorea-mcp","xlsx","toss-ledger","dart-mcp"]},
+{cat:"finance",title:"📊 투자 리서치 & 포트폴리오 분석",desc:"주가 → 재무분석 → 전망 → 리포트 → 알림",
+flow:["📉 주가","📊 재무분석","🔮 전망","📄 리포트","💬 알림"],
+tools:["KIS_MCP_Server","krecofin-mcp","dart-mcp","xlsx","pptx","kakaotalk-mcp"]},
+{cat:"project",title:"📋 클라이언트 프로젝트 파이프라인",desc:"요구사항 → PRD → 이슈분해 → TDD → 리뷰 → 배포",
+flow:["📝 요구사항","📄 PRD","🔖 이슈","🧪 TDD","🔍 리뷰","🚀 배포"],
+tools:["to-prd","to-issues","tdd","diagnose","grill-me","improve-codebase-architecture"]},
+{cat:"project",title:"📋 랜딩페이지 1일 제작",desc:"디자인 → React → 테스트 → 배포 → SEO → 분석",
+flow:["🎨 디자인","⚛️ React","🧪 테스트","🚀 배포","🔍 SEO","📊 분석"],
+tools:["frontend-design","vercel-react-best-practices","next-best-practices","webapp-testing","seo-audit"]},
+{cat:"daily",title:"🏠 아침 루틴 정보 수집",desc:"날씨 → 미세먼지 → 교통 → 일정 → 뉴스 → 카톡",
+flow:["🌤️ 날씨","😷 미세먼지","🚇 지하철","📅 일정","📰 뉴스","💬 카톡"],
+tools:["korea-weather-mcp","airkorea-mcp","korean-subway-mcp","lark-calendar","naver-search-mcp","kakaotalk-mcp"]},
+{cat:"daily",title:"🏠 여행/출장 계획 자동화",desc:"날씨 → 기차예매 → 숙소 → 동선 → 일정 공유",
+flow:["🌤️ 날씨","🚄 예매","🏨 숙소","🗺️ 동선","📱 공유"],
+tools:["korea-weather-mcp","srt-booking","foresttrip-vacancy","Odsay-MCP","kakaotalk-mcp"]},
+{cat:"daily",title:"🏠 병원 예약 & 건강 관리",desc:"병원검색 → 예약 → 처방기록 → 알림",
+flow:["🏥 검색","📅 예약","💊 처방","⏰ 알림","💬 카톡"],
+tools:["healthymap-mcp","korea-pharmacy-mcp","korea-emergency-mcp","kakaotalk-mcp"]},
+{cat:"daily",title:"🏠 스마트 쇼핑 비교",desc:"상품검색 → 최저가 → 리뷰 → 구매 → 배송추적",
+flow:["🔍 검색","💰 비교","⭐ 리뷰","🛒 구매","📦 배송"],
+tools:["coupang-search","naver-shopping","daiso-search","naver-search-mcp","korea-post"]},
+];
+
+// ===========================
+// RENDER FUNCTIONS
+// ===========================
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const fmt=n=>n?n.toLocaleString():"—";
+
+// Update total count
+document.getElementById("stat-total").textContent=DB.length;
+
+// RENDER DIRECTORY TABS
+function renderDirTabs(){
+  const allCats=Object.keys(CATS);
+  let html='<div class="tab active" data-c="all">전체 ('+DB.length+')</div>';
+  allCats.forEach(k=>{
+    const count=DB.filter(i=>i.c.includes(k)).length;
+    html+=`<div class="tab" data-c="${k}">${CATS[k].icon} ${CATS[k].label} (${count})</div>`;
+  });
+  $('#dir-tabs').innerHTML=html;
+  $$('#dir-tabs .tab').forEach(t=>t.addEventListener('click',function(){
+    $$('#dir-tabs .tab').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+    renderDir(this.dataset.c);
+  }));
+}
+
+function renderDir(cat){
+  const q=$('#dir-search').value.toLowerCase();
+  let items=DB;
+  if(cat!=='all') items=items.filter(i=>i.c.includes(cat));
+  if(q) items=items.filter(i=>(i.n+i.d+i.s).toLowerCase().includes(q));
+  $('#dir-count').textContent=items.length+'개';
+  let html='';
+  items.forEach(i=>{
+    const bc=i.t==='mcp'?'b-mcp':i.t==='k-skill'?'b-kskill':'b-skill';
+    const bl=i.t==='mcp'?'MCP':i.t==='k-skill'?'k-skill':'Skill';
+    const tags=i.c.map(c=>CATS[c]?`<span class="tag tag-cat">${CATS[c].icon} ${CATS[c].label}</span>`:'').join('');
+    const ins=i.i?`<span class="installs-badge">${fmt(i.i)}</span>`:'';
+    const link=i.l?`<a class="card-link" href="${i.l}" target="_blank">🔗 링크</a>`:'';
+    html+=`<div class="card"><div class="card-top"><div class="card-name">${i.n}</div><span class="card-badge ${bc}">${bl}</span></div><div class="card-desc">${i.d}</div><div class="card-meta">${tags}${ins}${link}</div></div>`;
+  });
+  $('#dir-grid').innerHTML=html;
+}
+
+$('#dir-search').addEventListener('input',()=>{
+  const activeTab=$('#dir-tabs .tab.active');
+  renderDir(activeTab?activeTab.dataset.c:'all');
+});
+
+// RENDER WORKFLOWS
+function renderWFs(){
+  let html='';
+  WFS.forEach(w=>{
+    html+=`<div class="workflow" data-c="${w.cat}"><div class="wf-title">${w.title}</div><div class="wf-desc">${w.desc}</div><div class="flow">`;
+    w.flow.forEach((s,j)=>{
+      if(j>0) html+='<div class="flow-arrow">→</div>';
+      html+=`<div class="flow-step">${s}</div>`;
+    });
+    html+='</div><div class="tools">';
+    w.tools.forEach(t=>{
+      const isMcp=DB.find(x=>x.n===t&&x.t==='mcp');
+      const isKskill=DB.find(x=>x.n===t&&x.t==='k-skill');
+      const cls=isMcp?'tool-mcp':isKskill?'tool-mcp':'tool-skill';
+      html+=`<span class="tool ${cls}">${t}</span>`;
+    });
+    html+='</div></div>';
+  });
+  $('#wf-list').innerHTML=html;
+  $$('#wf-tabs .tab').forEach(t=>t.addEventListener('click',function(){
+    $$('#wf-tabs .tab').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+    const c=this.dataset.c;
+    $$('.workflow').forEach(w=>w.style.display=(c==='all'||w.dataset.c===c)?'':'none');
+  }));
+}
+
+// RENDER TOP 200 TABLE
+function renderTable(){
+  const skills=DB.filter(i=>i.i!==null).sort((a,b)=>b.i-a.i);
+  const tbody=$('#tbl-body');
+  let html='';
+  skills.forEach((s,idx)=>{
+    html+=`<tr><td class="rank">${idx+1}</td><td>${s.n}</td><td class="td-desc">${s.d}</td><td class="src">${s.s}</td><td class="ins">${fmt(s.i)}</td></tr>`;
+  });
+  tbody.innerHTML=html;
+  $('#tbl-search').addEventListener('input',function(){
+    const q=this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none');
+  });
+}
+
+// SMOOTH SCROLL
+$$('.nav-links a').forEach(a=>a.addEventListener('click',function(e){
+  e.preventDefault();
+  const id=this.getAttribute('href').slice(1);
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+}));
+
+// INIT
+renderDirTabs();
+renderDir('all');
+renderWFs();
+renderTable();
+</script>
+</body>
+</html>

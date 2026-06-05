@@ -23,6 +23,10 @@ Date: 2026-06-02
 | discover-skills | skill | Autonomous skill search, evaluation, and installation from skills.sh ecosystem. |
 | frontend-slides | skill | Zero-dependency animation-rich HTML presentations. Installed at `.frontend-slides/`. |
 | install-gptaku | skill | Installer script to convert and install Claude Code plugins into Antigravity. |
+| skillers-suda | plugin | Automatic skill generation via 4-agent debate and interview. |
+| kkirikkiri | plugin | Virtual expert team setup and subagent coordination. |
+| vibe-sunsang | plugin | Self-diagnosis, log analysis, coaching, and growth report. |
+| insane-search | plugin | Adaptive proxy search and bypass blocked sites collection. |
 
 ## Install Candidates
 

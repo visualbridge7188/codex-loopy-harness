@@ -1,0 +1,54 @@
+{
+  "env": {
+    "TELEGRAM_BOT_TOKEN": "YOUR_BOT_TOKEN",
+    "TELEGRAM_CHAT_ID": "YOUR_CHAT_ID",
+    "PROJECT_NAME": "my-harness-project"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(npm:*)",
+      "Bash(node:*)",
+      "Read",
+      "Write",
+      "Edit"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          "hooks/context-enrichment.sh"
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          "hooks/agent-permission-check.sh",
+          "hooks/no-localstorage.sh",
+          "hooks/auto-validate.sh",
+          "hooks/require-isPWA-check.sh",
+          "hooks/scaffold-violation-check.sh"
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          "hooks/require-telegram-notify.sh"
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          "hooks/session-cleanup.sh"
+        ]
+      }
+    ]
+  }
+}

@@ -75,6 +75,10 @@ This registry maps Hugh Kim's published skill/plugin catalog into this Codex wor
 | `insights-ui` | Observability reference repo | `defer` |
 | `claude-dashboard` | Observability reference | `defer` |
 | `oh-my-claudecode` | Harness inspiration only | `defer` |
+| `skillers-suda` | Converted GPTaku skill | `adopt` |
+| `kkirikkiri` | Converted GPTaku skill | `adopt` |
+| `vibe-sunsang` | Converted GPTaku skill | `adopt` |
+| `insane-search` | Converted GPTaku skill | `adopt` |
 
 ## v0.1 Install Candidates
 

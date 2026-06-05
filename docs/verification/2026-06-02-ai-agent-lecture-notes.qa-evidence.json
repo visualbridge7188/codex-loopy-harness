@@ -1,0 +1,180 @@
+{
+  "task": {
+    "title": "AI Agent lecture Korean prose HTML notes",
+    "date": "2026-06-02",
+    "scope": "Create and revise a Korean long-form HTML teaching handout for a 2-hour AI Agent lecture for WordPress website creators, including the user's head/hand analogy, agent tool installation framing, MCP automatic feedback loop, GitHub explanation, Naver-to-WordPress demo, and 100 practical use cases."
+  },
+  "contract": {
+    "acceptanceCriteria": [
+      "HTML file exists under outputs/ai-agent-lecture.",
+      "Lecture notes are Korean-first and written as continuous teaching prose, not only slide bullets.",
+      "Document includes the 2-hour lecture structure and a 35-45 slide storyboard.",
+      "Document includes chatbot vs agent, ChatGPT/Codex, Claude/Claude Code, Gemini/Google Antigravity, CLI, IDE, AGENTS.md/CLAUDE.md, Skills, Plugins, MCP, GitHub, closed-loop workflow, Naver-to-WordPress demo, and safe WordPress automation.",
+      "Document includes the user's MCP automatic feedback loop analogy and setup protocol with safety framing.",
+      "Document includes Antigravity and Codex installation/reference links.",
+      "Document includes links to Vercel Agent Skills, Anthropic Skills, Superpowers, and Karpathy-inspired CLAUDE.md.",
+      "Document includes approximately 100 WordPress/business use ideas.",
+      "Current MCP claims are tied to checked public sources and include a version/date caution."
+    ],
+    "qaScenarios": [
+      "Static search confirms required Korean concepts are present.",
+      "HTML parses without obvious structural errors.",
+      "File can be opened in a browser for reading.",
+      "No real credentials or secrets are included."
+    ],
+    "fileBoundaries": [
+      "outputs/ai-agent-lecture/lecture-notes.html",
+      "docs/verification/2026-06-02-ai-agent-lecture-notes.qa-evidence.json"
+    ]
+  },
+  "capabilities": {
+    "skillsUsed": [
+      "superpowers:brainstorming",
+      "superpowers:verification-before-completion"
+    ],
+    "pluginsUsed": [],
+    "toolsInstalled": [],
+    "toolsSkipped": [
+      {
+        "name": "Browser plugin",
+        "reason": "Not exposed as a callable browser control tool in this turn; static HTML checks were used instead."
+      }
+    ]
+  },
+  "sourcesChecked": [
+    {
+      "title": "WordPress MCP Adapter GitHub repository",
+      "url": "https://github.com/WordPress/mcp-adapter/",
+      "notes": "Checked adapter purpose and latest visible v0.5.0 release marker."
+    },
+    {
+      "title": "Automattic mcp-wordpress-remote GitHub repository",
+      "url": "https://github.com/Automattic/mcp-wordpress-remote",
+      "notes": "Checked endpoint path, npm package usage, OAuth/Application Password configuration, and new setup guidance."
+    },
+    {
+      "title": "Enable Abilities for MCP WordPress.org plugin page",
+      "url": "https://wordpress.org/plugins/enable-abilities-for-mcp/",
+      "notes": "Checked WordPress 6.9 Abilities API framing and MCP Adapter requirement."
+    },
+    {
+      "title": "OpenAI Codex CLI documentation",
+      "url": "https://developers.openai.com/codex/cli",
+      "notes": "Checked Codex CLI positioning and install/reference link."
+    },
+    {
+      "title": "Google Antigravity download page",
+      "url": "https://antigravity.google/download?hl=en",
+      "notes": "Checked official Antigravity download URL."
+    },
+    {
+      "title": "Vercel Agent Skills documentation",
+      "url": "https://vercel.com/docs/agent-resources/skills",
+      "notes": "Checked skills directory and find-skills reference."
+    },
+    {
+      "title": "Vercel Agent Skills GitHub repository",
+      "url": "https://github.com/vercel-labs/agent-skills",
+      "notes": "Checked repository description and skill structure."
+    },
+    {
+      "title": "Anthropic Skills GitHub repository",
+      "url": "https://github.com/anthropics/skills",
+      "notes": "Checked public repository for Agent Skills and basic skill structure."
+    },
+    {
+      "title": "Superpowers GitHub repository",
+      "url": "https://github.com/obra/superpowers",
+      "notes": "Checked brainstorming, writing-plans, subagent-driven-development, systematic-debugging, and verification-before-completion workflow descriptions."
+    },
+    {
+      "title": "Karpathy-inspired Claude Code Guidelines",
+      "url": "https://github.com/multica-ai/andrej-karpathy-skills",
+      "notes": "Checked the four principles and CLAUDE.md/plugin framing."
+    }
+  ],
+  "verification": {
+    "commandsRun": [
+      {
+        "command": "rtk python3 -m html.parser outputs/ai-agent-lecture/lecture-notes.html",
+        "result": "exit 0; no parser errors printed"
+      },
+      {
+        "command": "rtk rg -n \"좋은 머리|손이 생긴|네이버|Antigravity|Codex|GitHub|Superpowers|Karpathy|Vercel Agent Skills|Anthropic Skills|MCP 자동|100가지\" outputs/ai-agent-lecture/lecture-notes.html",
+        "result": "exit 0; revised required concepts found"
+      },
+      {
+        "command": "rtk python3 - <<'PY' ... count section 12 <li> items ... PY",
+        "result": "100 practical use-case list items found in section 12"
+      },
+      {
+        "command": "rtk rg -n \"sk-|xox|ghp_|발급받은-16자리|실제 비밀번호|password\\s*[:=]\\s*[A-Za-z0-9]\" outputs/ai-agent-lecture/lecture-notes.html",
+        "result": "exit 0; only matched the instructional phrase warning not to include a real password"
+      },
+      {
+        "command": "rtk wc -l outputs/ai-agent-lecture/lecture-notes.html docs/verification/2026-06-02-ai-agent-lecture-notes.qa-evidence.json",
+        "result": "lecture-notes.html has 789 lines; evidence JSON has 180 lines before this evidence text update"
+      }
+    ],
+    "testResults": [
+      {
+        "name": "HTML parser check",
+        "status": "pass",
+        "evidence": "python html.parser completed with exit code 0"
+      },
+      {
+            "name": "Required revised topic coverage",
+            "status": "pass",
+            "evidence": "rg found the head/hand analogy, Naver demo, Antigravity, Codex, GitHub, Superpowers, Karpathy, Vercel Agent Skills, Anthropic Skills, MCP loop, and 100-use-cases terms"
+        },
+        {
+            "name": "100 use cases count",
+            "status": "pass",
+            "evidence": "Section 12 contains exactly 100 list items"
+      },
+      {
+        "name": "Secret scan",
+        "status": "pass",
+        "evidence": "No real API keys or credentials were found; one safe instructional warning phrase matched"
+      }
+    ],
+    "browserChecks": [
+      {
+        "name": "Automated browser screenshot",
+        "status": "skipped",
+        "reason": "Browser control was not exposed by tool discovery; node_repl check found Playwright was not installed."
+      }
+    ],
+    "securityChecks": [],
+    "findings": [
+      {
+        "severity": "LOW",
+        "status": "open",
+        "summary": "No rendered browser screenshot was captured in this turn. Static parser and content checks passed."
+      }
+    ]
+  },
+  "loop": {
+    "cycle": 1,
+    "maxCycles": 3,
+    "mustFixSeverities": [
+      "CRITICAL",
+      "HIGH"
+    ],
+    "status": "pass"
+  },
+  "memory": {
+    "decisions": [
+      "The first lecture artifact is a Korean prose HTML handout before building a slide deck.",
+      "MCP automatic feedback loop content is included after the manual Naver-to-WordPress demo so beginners understand safety before automation."
+    ],
+    "preferences": [
+      "User wants Korean teaching material first, in an HTML file, written as continuous explanatory prose."
+    ],
+    "patterns": [],
+    "constraints": [
+      "Do not include real WordPress credentials or secrets in lecture artifacts.",
+      "Treat MCP write access as security-sensitive and frame it with staging, backup, limited permissions, rollback, and bounded retry guidance."
+    ]
+  }
+}

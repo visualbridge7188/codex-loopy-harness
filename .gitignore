@@ -1,1 +1,15 @@
 .superpowers/
+.gemini/
+.understand-anything/
+.kkirikkiri/
+scratch/
+outputs/
+*.pdf
+.DS_Store
+node_modules/
+dist/
+.claude
+.clinerules
+.codex/
+.frontend-slides/
+kkirikkiri-report-*.md
