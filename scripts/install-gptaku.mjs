@@ -10,6 +10,12 @@ if (!repoUrl) {
   process.exit(1);
 }
 
+const gitUrlRegex = /^(https?:\/\/|git@)[a-zA-Z0-9.-]+[:/][a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+(\.git)?$/;
+if (!gitUrlRegex.test(repoUrl)) {
+  console.error('Error: Invalid Git repository URL format.');
+  process.exit(1);
+}
+
 const homedir = os.homedir();
 const pluginsDir = path.join(homedir, '.gemini/config/plugins');
 const tempDir = path.join(process.cwd(), 'scratch', `tmp_clone_${Date.now()}`);
@@ -113,12 +119,17 @@ async function main() {
     console.log(`Plugin ${pluginName} successfully installed!`);
   } catch (error) {
     console.error('Installation failed:', error.message);
+    exitCode = 1;
   } finally {
     // Clean up temporary clone directory
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
     } catch {}
   }
+  if (exitCode !== 0) {
+    process.exit(exitCode);
+  }
 }
 
+let exitCode = 0;
 main();
