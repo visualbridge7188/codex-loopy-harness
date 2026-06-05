@@ -9,10 +9,10 @@ Coordinates execution across the 8 SDLC phases using specialist agent delegation
 
 ## Step-by-Step Cycle
 1. **Analyze input:** Profile target goals and prepare `docs/plan.md`.
-2. **Design structure:** Delegate folder setup to `architect-designer`.
-3. **Database migrations:** Delegate schema and RLS policies to `supabase-specialist`.
-4. **Parallel implement:** Delegate frontend components and backend endpoints in parallel.
-5. **Testing suite:** Delegate test writing to `test-writer`.
-6. **Code audit:** Review logic with `code-reviewer` in read-only mode.
-7. **QA gates:** Run tests and browser scenarios via `web-qa-tester`.
-8. **Ship changes:** Commit branch, push, and alert via `telegram-notifier`.
+2. **Design structure:** Manager-Orchestrator sets up folder hierarchy and project configuration.
+3. **Database migrations:** Delegate schema and RLS policies to `backend-specialist`.
+4. **Parallel implement:** Delegate frontend components (`frontend-specialist`) and backend endpoints (`backend-specialist`) in parallel.
+5. **Testing suite:** Delegate test writing to `qa-specialist`.
+6. **Code audit:** `qa-specialist` reviews logic in read-only mode.
+7. **QA gates:** `qa-specialist` runs tests and browser scenarios; `devops-specialist` runs security scans.
+8. **Ship changes:** Manager commits branch, pushes; `devops-specialist` triggers notifications.
