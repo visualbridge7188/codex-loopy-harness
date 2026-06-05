@@ -3,6 +3,12 @@
 ## Project Context
 This is the **Codex Loopy Harness** — a reusable workspace template for AI-powered multi-agent development. Copy this directory into any new project to get the full harness system with agents, skills, hooks, and commands.
 
+## Architecture Summary
+- **5 Agents**: manager-orchestrator, frontend-specialist, backend-specialist, qa-specialist, devops-specialist
+- **4 Skills**: init-project, team, qa-cycle, discover-skills
+- **2 Commands**: `/team`, `/init`
+- **10 Hooks**: Automated bash validation gates
+
 ## Key Commands
 - Sync active settings to workspace: `bash scripts/sync.sh`
 - Apply workspace settings to active session: `bash scripts/apply.sh`

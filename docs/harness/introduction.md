@@ -7,7 +7,7 @@
 
 ## 1. 시스템 개요
 
-**Codex Loopy Harness**는 Claude Code / Codex를 개인 **"Work OS"**로 변환하는 검증 우선(verification-first) 자율 자가개선 하네스 시스템입니다. Hugh Kim의 멀티에이전트 오케스트레이션 패턴에서 영감을 받았으며, 단일 AI 어시스턴트를 **15개 전문 에이전트 팀**으로 구조화하여 소프트웨어 개발 라이프사이클 전체를 자동화합니다.
+**Codex Loopy Harness**는 Claude Code / Codex를 개인 **"Work OS"**로 변환하는 검증 우선(verification-first) 하네스 시스템입니다. **5개 전문 에이전트 팀**으로 구조화하여 소프트웨어 개발 라이프사이클 전체를 자동화합니다.
 
 ### 왜 하네스인가?
 
@@ -25,11 +25,11 @@
 ```
 ┌─────────────────────────────────────────────────┐
 │  Layer 1: Manager-Orchestrator (Opus 모델)       │
-│  • 기획, 태스크 분배, 리뷰, QA 루프 실행          │
+│  • 기획, 아키텍처, 태스크 분배, 리뷰, QA 루프    │
 │  • ❌ 프로덕션 코드 직접 작성 금지                  │
 ├─────────────────────────────────────────────────┤
 │  Layer 2: Specialist Agents (Sonnet 모델)        │
-│  • 15개 전문 에이전트가 역할별 경계 내에서 작업      │
+│  • 5개 전문 에이전트가 역할별 경계 내에서 작업      │
 │  • 파일 수정 권한 엄격 분리                         │
 ├─────────────────────────────────────────────────┤
 │  Layer 3: Automated Hooks (결정론적 게이트)        │
@@ -40,22 +40,21 @@
 
 ### Layer 1 — Manager-Orchestrator
 
-- **역할**: 오케스트레이션 팀 리더 — 계획, 위임, 검증
+- **역할**: 오케스트레이션 팀 리더 — 계획, 아키텍처 설계, 문서화, 제품 스펙, 위임, 검증
 - **책임**: 전체 SDLC 감독, `docs/plan.md` 관리, 빌드/검증 명령 실행, Git 배포
+- **흡수 역할**: Architect, Documentation Specialist, Product Specifier
 - **철칙**: 프로덕션 소스 코드를 직접 작성하지 않음. 모든 코드 변경은 전문가에게 위임
 
-### Layer 2 — Specialist Agents (15개)
+### Layer 2 — Specialist Agents (5개)
 
 각 에이전트는 **파일 수정 경계(file boundary)**가 엄격히 정의되어 있습니다:
 
-| 에이전트    | 허용 경로                                              | 차단 경로                   |
-| ----------- | ------------------------------------------------------ | --------------------------- |
-| Frontend    | `src/components/**`, `src/pages/**`, `src/hooks/**`    | `src/api/**`, 서버 코드     |
-| Backend     | `src/api/**`, `src/lib/server/**`, `src/middleware/**` | `src/components/**`, 페이지 |
-| Supabase    | `supabase/migrations/**`, `supabase/config.toml`       | 모든 `src/**`               |
-| Security    | 보안 감사 결과, 취약점 리포트                          | 비보안 프로덕션 코드        |
-| Test-Writer | `test/**`, `__tests__/**`                              | 프로덕션 소스               |
-| 기타 전문가 | 각자의 전문 영역                                       | 정의된 경계 외              |
+| 에이전트         | 허용 경로                                              | 흡수 역할                    |
+| ---------------- | ------------------------------------------------------ | ---------------------------- |
+| Frontend         | `src/components/**`, `src/pages/**`, `src/hooks/**`    | Performance Optimizer        |
+| Backend          | `src/api/**`, `src/lib/server/**`, `supabase/**`       | Supabase Specialist, Bug Fixer |
+| QA Specialist    | `__tests__/**`, `test/**`, `docs/qa-reports/**`        | Test Writer, Code Reviewer   |
+| DevOps           | `Dockerfile`, `.github/workflows/**`, `scripts/**`     | Security, Telegram Notifier  |
 
 ### Layer 3 — Automated Hooks (10개)
 
@@ -82,13 +81,13 @@
 
 ```
 P1: Plan Scaffolding      → Manager가 docs/plan.md에 태스크/요구사항 정의
-P2: Architecture Design   → Architect가 파일, 스크립트, 초기 의존성 설정
-P3: Database Schema       → Supabase Specialist가 Postgres 마이그레이션/RLS 작성
+P2: Architecture Design   → Manager가 파일, 스크립트, 초기 의존성 설정
+P3: Database Schema       → Backend Specialist가 Postgres 마이그레이션/RLS 작성
 P4: Parallel Implement    → Frontend와 Backend가 병렬로 동시 작업
-P5: Test Suite Generation → Test Writer가 Vitest/Jest/E2E 테스트 파일 구현
-P6: Static Review         → Reviewer가 디자인 패턴/클린코드 원칙 검사
-P7: Closed-Loop QA        → QA/Security가 이슈 식별 → 전문가 라우팅 → 재테스트 (통과까지)
-P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, 알림
+P5: Test Suite Generation → QA Specialist가 Vitest/Jest/E2E 테스트 파일 구현
+P6: Static Review         → QA Specialist가 디자인 패턴/클린코드 원칙 검사
+P7: Closed-Loop QA        → QA/DevOps가 이슈 식별 → 전문가 라우팅 → 재테스트 (통과까지)
+P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, DevOps가 알림
 ```
 
 ### 병렬 처리 규칙 (P4)
@@ -98,43 +97,35 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 
 ---
 
-## 4. 스킬 시스템 (8개)
+## 4. 스킬 시스템 (4개)
 
 스킬은 재사용 가능한 자동화 워크플로우입니다:
 
-| 스킬              | 용도                                        |
-| ----------------- | ------------------------------------------- |
-| `init-project`    | 프로젝트 코드베이스 프로파일링 및 초기 설정 |
-| `team`            | 8-Phase SDLC 오케스트레이션 파이프라인 실행 |
-| `qa-scenario-gen` | QA 테스트 계획 및 커버리지 매트릭스 생성    |
-| `qa-cycle`        | 자동화 다중 라운드 QA 테스트 (최대 5라운드) |
-| `harness-report`  | 하네스 상태 리포트 생성                     |
-| `loopy-era-eval`  | Loopy Era 평가 실행                         |
-| `self-improve`    | 하네스 자가 개선 사이클                     |
-| `discover-skills` | 외부 스킬 검색 및 발견                      |
+| 스킬              | 용도                                              |
+| ----------------- | ------------------------------------------------- |
+| `init-project`    | 프로젝트 코드베이스 프로파일링 및 초기 설정       |
+| `team`            | 8-Phase SDLC 오케스트레이션 파이프라인 실행       |
+| `qa-cycle`        | QA 시나리오 생성 + 자동화 다중 라운드 QA 테스트   |
+| `discover-skills` | 외부 스킬 검색 및 발견                            |
 
 ### 핵심 스킬: QA Cycle (폐루프 QA)
 
 ```
-[테스트 실행] → [결과 분석] → [심각도 분류] → [전문가 라우팅]
-     ↑                                              ↓
-     └──── [수정 검증] ←── [전문가 수정] ←──────────┘
-
-     (최대 5라운드 반복, 잔여 이슈는 에스컬레이션)
+[스펙 분석] → [테스트 케이스 설계] → [CRUD 매트릭스] → [테스트 실행]
+                                                               ↓
+[수정 검증] ← [전문가 수정] ← [전문가 라우팅] ← [결과 분석/심각도 분류]
+     ↑                                                         ↓
+     └──────────── (최대 5라운드 반복, 잔여 이슈는 에스컬레이션) ─┘
 ```
 
 ---
 
-## 5. 커맨드 시스템 (6개)
+## 5. 커맨드 시스템 (2개)
 
-| 커맨드　　　　　　　　　 | 용도　　　　　　　　　　　　　　　 |
-| ------------------------ | ---------------------------------- |
-| `/team`　　　　　　　　  | 8-Phase SDLC 파이프라인 트리거　　 |
-| `/project-orchestrator`  | 프로젝트 오케스트레이터 직접 호출  |
-| `/dashboard`　　　　　　 | 프로젝트 상태 대시보드　　　　　　 |
-| `/cc-apply`　　　　　　  | 변경사항 적용　　　　　　　　　　  |
-| `/cc-sync`　　　　　　　 | 동기화 실행　　　　　　　　　　　  |
-| `/scenario-test`　　　　 | 시나리오 테스트 실행　　　　　　　 |
+| 커맨드　　　 | 용도　　　　　　　　　　　　　　　 |
+| ------------ | ---------------------------------- |
+| `/team`　　  | 8-Phase SDLC 파이프라인 + 태스크 관리/위임 |
+| `/init`　　  | 프로젝트 초기화 (init-project 연동) |
 
 ---
 
@@ -156,25 +147,9 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 
 하네스의 메모리 설계는 [`docs/harness/memory.md`](memory.md)에 정의되어 있으며, 실제 구현은 **[`jung-wan-kim/memory-bank`](https://github.com/jung-wan-kim/memory-bank)** 플러그인으로 제공됩니다.
 
-### 설치
-
-```
-/plugin marketplace add https://github.com/jung-wan-kim/memory-bank
-/plugin install memory-bank
-```
-
-### 주요 기능
-
-- **Knowledge Graph**: 대화에서 자동으로 팩트 추출 (decision, preference, pattern, knowledge, constraint)
-- **RAG 검색**: 384-dim 임베딩 기반 시맨틱 검색
-- **팩트 통합**: 중복 감지, 모순 처리, 진화 추적
-- **그래프 순회**: 최대 3홉 탐색으로 의사결정 체인 추적
-- **크로스 프로젝트**: 다른 프로젝트의 유사 의사결정 발견
-- **MCP 통합**: 9개 도구 (search, read, search_facts, ask_avatar, trace_fact, explore_graph 등)
-
 ### 팩트 카테고리
 
-| 타입         | 용도                    | 예시                                   |
+| 타입         | 용과                    | 예시                                   |
 | ------------ | ----------------------- | -------------------------------------- |
 | `decision`   | 기술적 선택과 정당성    | "Supabase RLS 대신 앱 레벨 인가 채택"  |
 | `preference` | 개발자/사용자 선호      | "컴포넌트는 함수형으로"                |
@@ -189,7 +164,7 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 ### 8.1 새 프로젝트 시작
 
 ```
-1. /init-project 실행 → 코드베이스 프로파일링 + CLAUDE.md 자동 생성
+1. /init 실행 → 코드베이스 프로파일링 + CLAUDE.md 자동 생성
 2. /team 실행 → 8-Phase SDLC 자동 시작
 3. Manager가 plan.md 작성 → 전문가에게 태스크 위임
 4. 자동 QA + 검증 → 완료 시 알림
@@ -198,11 +173,10 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 ### 8.2 기존 프로젝트 관리
 
 ```
-1. /dashboard 실행 → 현재 상태 확인
-2. 이슈 발생 시 /scenario-test로 재현
-3. /qa-cycle 실행 → 자동 QA 루프
-4. 이슈 발견 → 해당 전문가에게 자동 라우팅
-5. 수정 후 재검증 → 통과 시 배포
+1. /team status → 현재 태스크 상태 확인
+2. /qa-cycle 실행 → 자동 QA 루프
+3. 이슈 발견 → 해당 전문가에게 자동 라우팅
+4. 수정 후 재검증 → 통과 시 배포
 ```
 
 ### 8.3 품질 게이트 운용
@@ -221,25 +195,15 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 ### 8.4 에이전트 팀 조작
 
 ```
-# 특정 전문가 직접 호출
-/architect-designer → 아키텍처 설계
-/frontend-specialist → 프론트엔드 구현
-/backend-specialist → 백엔드 구현
-/security-specialist → 보안 감사
-/code-reviewer → 코드 리뷰
+# 전문가 호출
+/frontend-specialist → 프론트엔드 구현 + 성능 최적화
+/backend-specialist → 백엔드 구현 + DB 관리
+/qa-specialist → QA + 테스트 작성 + 코드 리뷰
+/devops-specialist → 배포 + 보안 + 알림
 
 # 병렬 처리 (P4 Phase)
 Frontend-specialist ∥ Backend-specialist → 동시 작업
 # 각각 분리된 파일 세트에서 작업, 완료 후 병합
-```
-
-### 8.5 자가 개선 사이클
-
-```
-/self-improve 실행 → 하네스가 자신의 성능을 분석
-  → 병목 식별
-  → 최적화 제안
-  → 자동 적용 또는 승인 요청
 ```
 
 ---
@@ -251,24 +215,20 @@ hugh.kim/
 ├── AGENTS.md              # 핵심 규칙 (3-레이어, 8-Phase, Fail-Closed)
 ├── CLAUDE.md              # Claude Code 설정
 ├── settings.json          # 하네스 설정
-├── agents/                # 15개 전문 에이전트 정의
+├── agents/                # 5개 전문 에이전트 정의
 │   ├── manager-orchestrator.md
-│   ├── architect-designer.md
 │   ├── frontend-specialist.md
 │   ├── backend-specialist.md
-│   ├── supabase-specialist.md
-│   ├── test-writer.md
-│   ├── code-reviewer.md
-│   ├── web-qa-tester.md
-│   ├── security-specialist.md
-│   ├── devops-specialist.md
-│   ├── bug-fixer.md
-│   ├── documentation-specialist.md
-│   ├── performance-optimizer.md
-│   ├── product-specifier.md
-│   └── telegram-notifier.md
-├── skills/                # 8개 자동화 스킬
-├── commands/              # 6개 커맨드
+│   ├── qa-specialist.md
+│   └── devops-specialist.md
+├── skills/                # 4개 자동화 스킬
+│   ├── init-project/
+│   ├── team/
+│   ├── qa-cycle/
+│   └── discover-skills/
+├── commands/              # 2개 커맨드
+│   ├── team.md
+│   └── init.md
 ├── hooks/                 # 10개 자동화 훅
 ├── rules/                 # 코딩 규칙 (프론트/백/QA)
 ├── scripts/               # 유틸리티 스크립트
@@ -294,8 +254,7 @@ hugh.kim/
 | 3   | **엄격한 경계**        | 에이전트는 정의된 파일 경계 내에서만 작업         |
 | 4   | **폐루프**             | 게이트 통과 불가 시 작업 차단 (Fail-Closed)       |
 | 5   | **자동화 최우선**      | Hook, Skill, Command로 반복 작업 자동화           |
-| 6   | **지속 가능한 메모리** | Memory Bank 플러그인으로 의사결정/패턴 영속 저장  |
-| 7   | **자가 개선**          | 하네스가 자신의 성능을 분석하고 최적화            |
+| 6   | **실용적 축소**        | 15→5 에이전트, 8→4 스킬, 6→2 커맨드로 최적화      |
 
 ---
 
@@ -305,5 +264,6 @@ hugh.kim/
 
 ## 참고 문서
 
-- [워크플로우 비교 분석 — 기존 스킬 체인 vs 하네스 8-Phase](workflow-comparison.md) → **하이브리드 3-Phase 워크플로우 추천**
+- [하네스 현실 점검](reality-check.md)
+- [워크플로우 비교 분석](workflow-comparison.md) → **하이브리드 3-Phase 워크플로우 추천**
 - [하네스 원칙](principles.md) | [사용 가이드](usage.md) | [게이트](gates.md) | [메모리](memory.md) | [역량 레지스트리](capability-registry.md)

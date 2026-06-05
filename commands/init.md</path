@@ -1,0 +1,19 @@
+---
+description: Initialize a new project with profiling and setup
+---
+
+# /init
+
+Runs the `init-project` skill to profile the codebase and set up initial configuration.
+
+## Usage
+
+```bash
+/init
+```
+
+## What It Does
+1. Profiles the project codebase (language, framework, dependencies)
+2. Generates or updates `CLAUDE.md` with project context
+3. Sets up initial directory structure if needed
+4. Links to the `init-project` skill in `skills/init-project/SKILL.md`
