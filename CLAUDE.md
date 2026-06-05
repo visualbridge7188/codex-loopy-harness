@@ -4,10 +4,10 @@
 This is the **Codex Loopy Harness v2** — a reusable workspace template for AI-powered multi-agent development with automatic skill activation, edit tracking, and 9 specialist agents. Copy this directory into any new project to get the full harness system.
 
 ## Architecture Summary
-- **9 Agents**: 5 Core (manager-orchestrator, frontend-specialist, backend-specialist, qa-specialist, devops-specialist) + 4 Extended (auto-error-resolver, code-architecture-reviewer, refactor-planner, documentation-architect)
-- **4+ Skills**: init-project, team, qa-cycle, discover-skills + auto-activated skills from skill-rules.json
-- **6 Commands**: `/team`, `/init`, `/skillers-suda`, `/kkirikkiri`, `/vibe-sunsang`, `/insane-search`
-- **12 Hooks**: Automated bash validation gates + skill activation + edit tracking
+- **11 Agents**: 5 Core + 4 Extended + 2 Additional (plan-reviewer, code-refactor-master)
+- **9 Skills**: init-project, team, qa-cycle, discover-skills, frontend-dev-guidelines, backend-dev-guidelines, skill-developer, route-tester, error-tracking + auto-activated via skill-rules.json (18 rules)
+- **7 Commands**: `/team`, `/init`, `/skillers-suda`, `/kkirikkiri`, `/vibe-sunsang`, `/insane-search`, `/dev-docs`
+- **16 Hooks**: Automated validation gates + skill activation + edit tracking + error handling + build checks
 
 ## Key Commands
 - Sync active settings to workspace: `bash scripts/sync.sh`

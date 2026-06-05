@@ -58,6 +58,10 @@
           {
             "type": "command",
             "command": "hooks/post-tool-use-tracker.sh"
+          },
+          {
+            "type": "command",
+            "command": "hooks/error-handling-reminder.sh"
           }
         ]
       },

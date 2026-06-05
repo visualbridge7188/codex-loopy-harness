@@ -28,7 +28,7 @@ Do not treat an agent's claim of completion as proof. Use files, logs, tests, sc
 | `qa-specialist` | QA + test writing + code review + closed-loop | Test Writer, Code Reviewer |
 | `devops-specialist` | DevOps + security + deployment + notifications | Security Specialist, Telegram Notifier, Infra Engineer |
 
-### Extended Team (4)
+### Extended Team (6)
 
 | Agent | Role | Trigger |
 |-------|------|---------|
@@ -36,6 +36,8 @@ Do not treat an agent's claim of completion as proof. Use files, logs, tests, sc
 | `code-architecture-reviewer` | Architecture quality review | Pre-merge, tech debt |
 | `refactor-planner` | Refactoring strategy and planning | Architecture issues, migrations |
 | `documentation-architect` | Documentation maintenance and accuracy | API changes, releases, stale docs |
+| `plan-reviewer` | Plan quality validation before implementation | Before implementation starts |
+| `code-refactor-master` | Code refactoring execution | Architecture issues, code smells |
 
 ### File Boundary Rules
 
@@ -95,7 +97,7 @@ Skills are automatically activated via the `skill-activation-prompt` hook:
 }
 ```
 
-### Active Skills
+### Active Skills (18 Rules)
 
 | Skill | Purpose | Priority |
 |-------|---------|----------|
@@ -107,14 +109,19 @@ Skills are automatically activated via the `skill-activation-prompt` hook:
 | `kkirikkiri` | AI agent team auto-configuration | High |
 | `nextjs-frontend-guidelines` | Next.js best practices | High |
 | `vercel-react-best-practices` | React performance optimization | High |
+| `frontend-dev-guidelines` | Comprehensive frontend dev guide (patterns, styling, routing) | High |
+| `backend-dev-guidelines` | Comprehensive backend dev guide (architecture, DB, validation) | High |
+| `error-tracking` | Error tracking, analysis, and resolution | High |
 | `vibe-sunsang` | AI growth mentor | Medium |
 | `fastapi-backend-guidelines` | FastAPI development guide | Medium |
 | `improve-codebase-architecture` | Architecture improvement | Medium |
 | `frontend-design` | Production-grade UI design | Medium |
+| `skill-developer` | Custom skill creation guide with hook mechanisms | Medium |
+| `route-tester` | Automated route/API endpoint testing | Medium |
 
 ---
 
-## 5. Hook System (12 Hooks)
+## 5. Hook System (16 Hooks)
 
 ### UserPromptSubmit Hooks
 | Hook | Purpose |
@@ -131,6 +138,7 @@ Skills are automatically activated via the `skill-activation-prompt` hook:
 | `require-isPWA-check.sh` | Enforce PWA requirements |
 | `scaffold-violation-check.sh` | Detect scaffold violations |
 | `post-tool-use-tracker.sh` | **v2 NEW** — Track file changes per session |
+| `error-handling-reminder.sh` | Remind about error handling patterns |
 
 ### PostToolUse Hooks (Bash)
 | Hook | Purpose |
@@ -141,6 +149,13 @@ Skills are automatically activated via the `skill-activation-prompt` hook:
 | Hook | Purpose |
 |------|---------|
 | `session-cleanup.sh` | Clean up session artifacts |
+
+### Additional Hooks (Available for Advanced Use)
+| Hook | Purpose |
+|------|---------|
+| `trigger-build-resolver.sh` | Auto-trigger error resolver on build failure |
+| `stop-build-check-enhanced.sh` | Enhanced build check on session stop |
+| `tsc-check.sh` | TypeScript type checking gate |
 
 ---
 

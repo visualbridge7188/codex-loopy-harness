@@ -315,6 +315,130 @@
                     "(beautiful|polished|깔끔).*?(interface|UI|design)"
                 ]
             }
+        },
+        "frontend-dev-guidelines": {
+            "type": "guardrail",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Comprehensive frontend development guidelines — component patterns, styling, performance, routing, data fetching",
+            "promptTriggers": {
+                "keywords": [
+                    "component pattern",
+                    "styling guide",
+                    "frontend performance",
+                    "file organization",
+                    "data fetching",
+                    "frontend typescript",
+                    "컴포넌트 패턴",
+                    "프론트엔드 가이드"
+                ],
+                "intentPatterns": [
+                    "(frontend|프론트엔드).*?(guide|가이드|pattern|패턴|standard|표준)",
+                    "(component|컴포넌트).*?(pattern|패턴|structure|구조)",
+                    "(react|next).*?(best practice|모범 사례)"
+                ]
+            },
+            "fileTriggers": {
+                "pathPatterns": [
+                    "src/components/**/*.{tsx,ts}",
+                    "src/pages/**/*.{tsx,ts}",
+                    "src/app/**/*.{tsx,ts}"
+                ]
+            }
+        },
+        "backend-dev-guidelines": {
+            "type": "guardrail",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Comprehensive backend development guidelines — architecture, database, middleware, validation, testing",
+            "promptTriggers": {
+                "keywords": [
+                    "backend architecture",
+                    "database pattern",
+                    "middleware guide",
+                    "validation pattern",
+                    "backend testing",
+                    "service repository",
+                    "백엔드 가이드",
+                    "API 패턴"
+                ],
+                "intentPatterns": [
+                    "(backend|백엔드).*?(guide|가이드|pattern|패턴|architecture|아키텍처)",
+                    "(api|API).*?(design|설계|pattern|패턴|route|라우트)",
+                    "(database|데이터베이스).*?(pattern|패턴|migration|마이그레이션)"
+                ]
+            },
+            "fileTriggers": {
+                "pathPatterns": [
+                    "src/api/**/*.{ts,py}",
+                    "src/lib/server/**/*.{ts,py}",
+                    "supabase/migrations/*.sql"
+                ]
+            }
+        },
+        "skill-developer": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "medium",
+            "description": "Complete guide for creating custom skills with hook mechanisms, trigger types, and patterns library",
+            "promptTriggers": {
+                "keywords": [
+                    "skill development",
+                    "skill hook",
+                    "skill trigger",
+                    "skill pattern",
+                    "스킬 개발",
+                    "스킬 훅",
+                    "custom skill"
+                ],
+                "intentPatterns": [
+                    "(skill|스킬).*?(develop|개발|create|만들|hook|훅)",
+                    "(hook|훅).*?(mechanism|메커니즘|pattern|패턴)",
+                    "(trigger|트리거).*?(type|유형|config|설정)"
+                ]
+            }
+        },
+        "route-tester": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "medium",
+            "description": "Automated route/API endpoint testing skill",
+            "promptTriggers": {
+                "keywords": [
+                    "route test",
+                    "API test",
+                    "endpoint test",
+                    "라우트 테스트",
+                    "API 테스트",
+                    "엔드포인트 테스트"
+                ],
+                "intentPatterns": [
+                    "(route|라우트|endpoint).*?(test|테스트|verify|검증)",
+                    "(API).*?(test|테스트|check|확인)"
+                ]
+            }
+        },
+        "error-tracking": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Error tracking, analysis, and resolution workflow",
+            "promptTriggers": {
+                "keywords": [
+                    "error tracking",
+                    "error analysis",
+                    "build error",
+                    "runtime error",
+                    "에러 추적",
+                    "빌드 에러",
+                    "에러 분석",
+                    "type error"
+                ],
+                "intentPatterns": [
+                    "(error|에러|오류).*?(track|추적|analyze|분석|resolve|해결)",
+                    "(build|빌드).*?(fail|실패|error|에러|fix|수정)"
+                ]
+            }
         }
     },
     "notes": {
