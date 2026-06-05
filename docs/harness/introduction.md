@@ -150,9 +150,29 @@ P8: Ship & Notify         → Manager가 CHANGELOG.md 갱신, 커밋, 푸시, �
 
 ---
 
-## 7. 메모리 시스템 (SQLite Memory Bank)
+## 7. 메모리 시스템 (Memory Bank 플러그인)
 
-하네스는 지속 가능한 지식을 SQLite 메모리 뱅크에 저장합니다:
+> **상태**: 설계 완료, 구현은 외부 플러그인으로 제공
+
+하네스의 메모리 설계는 [`docs/harness/memory.md`](memory.md)에 정의되어 있으며, 실제 구현은 **[`jung-wan-kim/memory-bank`](https://github.com/jung-wan-kim/memory-bank)** 플러그인으로 제공됩니다.
+
+### 설치
+
+```
+/plugin marketplace add https://github.com/jung-wan-kim/memory-bank
+/plugin install memory-bank
+```
+
+### 주요 기능
+
+- **Knowledge Graph**: 대화에서 자동으로 팩트 추출 (decision, preference, pattern, knowledge, constraint)
+- **RAG 검색**: 384-dim 임베딩 기반 시맨틱 검색
+- **팩트 통합**: 중복 감지, 모순 처리, 진화 추적
+- **그래프 순회**: 최대 3홉 탐색으로 의사결정 체인 추적
+- **크로스 프로젝트**: 다른 프로젝트의 유사 의사결정 발견
+- **MCP 통합**: 9개 도구 (search, read, search_facts, ask_avatar, trace_fact, explore_graph 등)
+
+### 팩트 카테고리
 
 | 타입         | 용도                    | 예시                                   |
 | ------------ | ----------------------- | -------------------------------------- |
@@ -261,7 +281,6 @@ hugh.kim/
 │   │   └── capability-registry.md
 │   ├── superpowers/       # 계획/스펙 문서
 │   └── verification/      # QA 증빙 JSON
-└── test/                  # 테스트 파일
 ```
 
 ---
@@ -275,7 +294,7 @@ hugh.kim/
 | 3   | **엄격한 경계**        | 에이전트는 정의된 파일 경계 내에서만 작업         |
 | 4   | **폐루프**             | 게이트 통과 불가 시 작업 차단 (Fail-Closed)       |
 | 5   | **자동화 최우선**      | Hook, Skill, Command로 반복 작업 자동화           |
-| 6   | **지속 가능한 메모리** | 의사결정/패턴/제약을 SQLite에 영속 저장           |
+| 6   | **지속 가능한 메모리** | Memory Bank 플러그인으로 의사결정/패턴 영속 저장  |
 | 7   | **자가 개선**          | 하네스가 자신의 성능을 분석하고 최적화            |
 
 ---
