@@ -2,7 +2,7 @@
   "env": {
     "TELEGRAM_BOT_TOKEN": "YOUR_BOT_TOKEN",
     "TELEGRAM_CHAT_ID": "YOUR_CHAT_ID",
-    "PROJECT_NAME": "my-harness-project"
+    "PROJECT_NAME": "codex-loopy-harness"
   },
   "permissions": {
     "allow": [
@@ -20,25 +20,54 @@
       {
         "matcher": "*",
         "hooks": [
-          "hooks/context-enrichment.sh"
+          {
+            "type": "command",
+            "command": "hooks/context-enrichment.sh"
+          },
+          {
+            "type": "command",
+            "command": "hooks/skill-activation-prompt.sh"
+          }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Edit|Write|replace_in_file|write_to_file",
         "hooks": [
-          "hooks/agent-permission-check.sh",
-          "hooks/no-localstorage.sh",
-          "hooks/auto-validate.sh",
-          "hooks/require-isPWA-check.sh",
-          "hooks/scaffold-violation-check.sh"
+          {
+            "type": "command",
+            "command": "hooks/agent-permission-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "hooks/no-localstorage.sh"
+          },
+          {
+            "type": "command",
+            "command": "hooks/auto-validate.sh"
+          },
+          {
+            "type": "command",
+            "command": "hooks/require-isPWA-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "hooks/scaffold-violation-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "hooks/post-tool-use-tracker.sh"
+          }
         ]
       },
       {
         "matcher": "Bash",
         "hooks": [
-          "hooks/require-telegram-notify.sh"
+          {
+            "type": "command",
+            "command": "hooks/require-telegram-notify.sh"
+          }
         ]
       }
     ],
@@ -46,7 +75,10 @@
       {
         "matcher": "*",
         "hooks": [
-          "hooks/session-cleanup.sh"
+          {
+            "type": "command",
+            "command": "hooks/session-cleanup.sh"
+          }
         ]
       }
     ]

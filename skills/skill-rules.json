@@ -1,0 +1,338 @@
+{
+    "version": "2.0",
+    "description": "Codex Loopy Harness - Skill activation triggers. Controls when skills automatically suggest or block actions based on user prompts and file edits.",
+    "skills": {
+        "team": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "critical",
+            "description": "8-Phase SDLC orchestration pipeline for full development workflows",
+            "promptTriggers": {
+                "keywords": [
+                    "개발 시작",
+                    "프로젝트 시작",
+                    "development workflow",
+                    "SDLC",
+                    "8 phase",
+                    "파이프라인",
+                    "pipeline",
+                    "스프린트",
+                    "sprint"
+                ],
+                "intentPatterns": [
+                    "(시작|start|begin).*?(프로젝트|project|개발|development)",
+                    "(실행|run|start).*?(팀|team|파이프라인|pipeline)",
+                    "(develop|build|ship).*?(feature|project|app)"
+                ]
+            }
+        },
+        "init-project": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Project codebase profiling and initial setup",
+            "promptTriggers": {
+                "keywords": [
+                    "초기화",
+                    "프로젝트 설정",
+                    "initialize",
+                    "project setup",
+                    "init project",
+                    "새 프로젝트",
+                    "scaffold"
+                ],
+                "intentPatterns": [
+                    "(초기화|initialize|setup).*?(프로젝트|project)",
+                    "(새|new).*?(프로젝트|project).*?(시작|start|setup)",
+                    "(scaffold|bootstrap).*?(project|app)"
+                ]
+            }
+        },
+        "qa-cycle": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "QA scenario generation + automated multi-round testing",
+            "promptTriggers": {
+                "keywords": [
+                    "QA",
+                    "테스트",
+                    "품질",
+                    "test",
+                    "quality",
+                    "testing",
+                    "버그",
+                    "bug",
+                    "regression",
+                    "E2E"
+                ],
+                "intentPatterns": [
+                    "(테스트|test|QA).*?(작성|run|create|write|실행)",
+                    "(버그|bug).*?(수정|fix|찾기|find|디버그|debug)",
+                    "(품질|quality).*?(확인|check|검증|verify)",
+                    "(regression|리그레션).*?(test|테스트)"
+                ]
+            }
+        },
+        "insane-search": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Auto-bypass for blocked websites — tries every method until one works",
+            "promptTriggers": {
+                "keywords": [
+                    "트위터",
+                    "레딧",
+                    "유튜브",
+                    "차단됨",
+                    "twitter",
+                    "reddit",
+                    "youtube",
+                    "blocked",
+                    "WAF",
+                    "우회",
+                    "bypass",
+                    "github search",
+                    "stackoverflow"
+                ],
+                "intentPatterns": [
+                    "(트위터|twitter|X).*?(열|open|access|read|읽)",
+                    "(레딧|reddit).*?(읽|read|access|열)",
+                    "(유튜브|youtube).*?(자막|subtitle|접근|access)",
+                    "(차단|blocked).*?(우회|bypass|해결|fix)",
+                    "(website|사이트).*?(blocked|차단|access|접근)"
+                ]
+            }
+        },
+        "skillers-suda": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "4 experts transform ideas into production-ready skills",
+            "promptTriggers": {
+                "keywords": [
+                    "스킬 만들어줘",
+                    "에이전트 만들어줘",
+                    "create skill",
+                    "build skill",
+                    "make skill",
+                    "skill builder",
+                    "스킬 작성"
+                ],
+                "intentPatterns": [
+                    "(스킬|skill).*?(만들|create|build|write|작성)",
+                    "(에이전트|agent).*?(만들|create|build)",
+                    "(create|build|make).*?(skill|에이전트|agent)"
+                ]
+            }
+        },
+        "kkirikkiri": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Natural language AI agent team auto-configuration",
+            "promptTriggers": {
+                "keywords": [
+                    "팀 만들어줘",
+                    "리서치 팀",
+                    "개발 팀",
+                    "team building",
+                    "agent team",
+                    "팀 구성",
+                    "create team"
+                ],
+                "intentPatterns": [
+                    "(팀|team).*?(만들|create|build|구성|setup)",
+                    "(리서치|research|개발|dev).*?(팀|team).*?(구성|setup|make)",
+                    "(agent|에이전트).*?(team|팀)"
+                ]
+            }
+        },
+        "vibe-sunsang": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "medium",
+            "description": "AI-powered growth mentor (start/transform/mentoring/growth/knowledge)",
+            "promptTriggers": {
+                "keywords": [
+                    "멘토링",
+                    "성장",
+                    "변환",
+                    "바선생",
+                    "mentor",
+                    "growth",
+                    "career",
+                    "커리어"
+                ],
+                "intentPatterns": [
+                    "(멘토|mentor).*?(받|receive|요청|request)",
+                    "(성장|grow|growth).*?(방법|how|전략|strategy)",
+                    "(바선생|vibe).*?(sunsang|선생)"
+                ]
+            }
+        },
+        "nextjs-frontend-guidelines": {
+            "type": "guardrail",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Next.js best practices - RSC, data patterns, async APIs, metadata, optimization",
+            "promptTriggers": {
+                "keywords": [
+                    "nextjs",
+                    "next.js",
+                    "RSC",
+                    "react server component",
+                    "app router",
+                    "server action",
+                    "SSR",
+                    "SSG",
+                    "ISR"
+                ],
+                "intentPatterns": [
+                    "(create|build|make).*?(next|page|layout|component)",
+                    "(nextjs|next).*?(app|page|route|layout|loading|error)",
+                    "(server|client).*?(component|rendering)",
+                    "(optimize|performance).*?(next|react|bundle)"
+                ]
+            },
+            "fileTriggers": {
+                "pathPatterns": [
+                    "src/app/**/*.{tsx,ts}",
+                    "app/**/*.{tsx,ts}",
+                    "src/pages/**/*.{tsx,ts}",
+                    "pages/**/*.{tsx,ts}"
+                ],
+                "pathExclusions": [
+                    "**/*.test.{tsx,ts}",
+                    "**/*.spec.{tsx,ts}"
+                ]
+            }
+        },
+        "vercel-react-best-practices": {
+            "type": "guardrail",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "React/Next.js performance optimization from Vercel Engineering",
+            "promptTriggers": {
+                "keywords": [
+                    "react performance",
+                    "rerender",
+                    "memo",
+                    "useMemo",
+                    "useCallback",
+                    "suspense",
+                    "lazy loading",
+                    "bundle optimization"
+                ],
+                "intentPatterns": [
+                    "(optimize|performance|빠르|fast).*?(react|component|render)",
+                    "(rerender|re-render|렌더링).*?(줄이|reduce|prevent|방지)",
+                    "(bundle|번들).*?(size|크기|optimize|최적화)",
+                    "(memo|useMemo|useCallback).*?(사용|use|apply)"
+                ]
+            },
+            "fileTriggers": {
+                "pathPatterns": [
+                    "src/**/*.{tsx,ts}",
+                    "**/*.{tsx,ts}"
+                ],
+                "pathExclusions": [
+                    "**/*.test.{tsx,ts}",
+                    "**/*.spec.{tsx,ts}"
+                ]
+            }
+        },
+        "fastapi-backend-guidelines": {
+            "type": "guardrail",
+            "enforcement": "suggest",
+            "priority": "medium",
+            "description": "FastAPI Best Architecture development guide",
+            "promptTriggers": {
+                "keywords": [
+                    "fastapi",
+                    "python",
+                    "uvicorn",
+                    "pydantic",
+                    "sqlalchemy",
+                    "alembic",
+                    "API router"
+                ],
+                "intentPatterns": [
+                    "(create|build).*?(fastapi|api|endpoint|route).*?(python)",
+                    "(fastapi|python).*?(project|setup|structure)",
+                    "(migration|model|schema).*?(alembic|sqlalchemy)"
+                ]
+            },
+            "fileTriggers": {
+                "pathPatterns": [
+                    "app/**/*.py",
+                    "src/**/*.py",
+                    "api/**/*.py"
+                ]
+            }
+        },
+        "improve-codebase-architecture": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "medium",
+            "description": "Find deepening opportunities in codebase architecture",
+            "promptTriggers": {
+                "keywords": [
+                    "architecture",
+                    "refactor",
+                    "codebase",
+                    "구조 개선",
+                    "아키텍처",
+                    "리팩토링",
+                    "technical debt"
+                ],
+                "intentPatterns": [
+                    "(improve|개선|refactor).*?(architecture|구조|codebase)",
+                    "(technical debt|기술 부채).*?(해결|resolve|reduce)",
+                    "(consolidate|통합).*?(module|모듈|component|컴포넌트)"
+                ]
+            }
+        },
+        "frontend-design": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "medium",
+            "description": "Production-grade frontend interfaces with high design quality",
+            "promptTriggers": {
+                "keywords": [
+                    "UI design",
+                    "frontend design",
+                    "landing page",
+                    "dashboard",
+                    "component design",
+                    "디자인",
+                    "레이아웃",
+                    "layout"
+                ],
+                "intentPatterns": [
+                    "(design|디자인).*?(page|component|UI|interface)",
+                    "(build|create|만들).*?(dashboard|landing|page|UI)",
+                    "(beautiful|polished|깔끔).*?(interface|UI|design)"
+                ]
+            }
+        }
+    },
+    "notes": {
+        "enforcement_types": {
+            "suggest": "Skill suggestion appears but doesn't block execution",
+            "block": "Requires skill to be used before proceeding (guardrail)",
+            "warn": "Shows warning but allows proceeding"
+        },
+        "priority_levels": {
+            "critical": "Highest — Always trigger when matched",
+            "high": "Important — Trigger for most matches",
+            "medium": "Moderate — Trigger for clear matches",
+            "low": "Optional — Trigger only for explicit matches"
+        },
+        "customization": {
+            "pathPatterns": "Matches our harness project structure",
+            "keywords": "Includes Korean + English triggers for bilingual workflow",
+            "intentPatterns": "Regex for flexible intent matching"
+        }
+    }
+}
