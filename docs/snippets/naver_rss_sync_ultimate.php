@@ -327,14 +327,11 @@ class Naver_RSS_Sync_Ultimate {
             return new WP_Error( 'empty_feed', 'RSS 피드 응답 본문이 비어 있습니다.' );
         }
 
-        // Suppress XML errors during parsing
-        libxml_use_internal_errors( true );
-        $xml = simplexml_load_string( $body, 'SimpleXMLElement', LIBXML_NOCDATA );
+        $xml = $this->parse_rss_xml( $body );
         if ( ! $xml ) {
             delete_transient( $lock_key );
             return new WP_Error( 'xml_parse_error', 'RSS XML 파싱에 실패했습니다.' );
         }
-        libxml_clear_errors();
 
         $items = isset( $xml->channel->item ) ? $xml->channel->item : [];
         if ( empty( $items ) ) {
@@ -573,6 +570,43 @@ class Naver_RSS_Sync_Ultimate {
         }
 
         return new WP_Error( 'sideload_failed', 'Sideloading image failed.' );
+    }
+
+    /**
+     * Parse RSS XML body, handling encoding conversions (e.g. EUC-KR to UTF-8)
+     * 
+     * @param string $body
+     * @return SimpleXMLElement|false
+     */
+    private function parse_rss_xml( $body ) {
+        if ( empty( $body ) ) {
+            return false;
+        }
+
+        $encoding = 'UTF-8';
+        if ( preg_match( '/encoding=["\'](.*?)["\']/i', $body, $m ) ) {
+            $encoding = strtoupper( $m[1] );
+        }
+
+        if ( 'UTF-8' !== $encoding ) {
+            $converted_body = false;
+            if ( function_exists( 'mb_convert_encoding' ) ) {
+                $converted_body = @mb_convert_encoding( $body, 'UTF-8', $encoding );
+            } elseif ( function_exists( 'iconv' ) ) {
+                $converted_body = @iconv( $encoding, 'UTF-8//IGNORE', $body );
+            }
+            if ( false !== $converted_body && ! empty( $converted_body ) ) {
+                $body = $converted_body;
+                $body = preg_replace( '/(encoding=["\'])(.*?)(["\'])/i', '${1}UTF-8${3}', $body );
+            }
+        }
+
+        // Suppress SimpleXML errors during parsing
+        libxml_use_internal_errors( true );
+        $xml = simplexml_load_string( $body, 'SimpleXMLElement', LIBXML_NOCDATA );
+        libxml_clear_errors();
+
+        return $xml;
     }
 
     public function enqueue_admin_styles() {
@@ -1052,13 +1086,15 @@ class Naver_RSS_Sync_Ultimate {
                 if ( ! is_wp_error( $response ) ) {
                     $body = wp_remote_retrieve_body( $response );
                     if ( ! empty( $body ) ) {
-                        $xml = simplexml_load_string( $body, 'SimpleXMLElement', LIBXML_NOCDATA );
-                        if ( $xml && isset( $xml->channel->item ) ) {
-                            foreach ( $xml->channel->item as $item ) {
-                                if ( isset( $item->category ) ) {
-                                    $cat_name = sanitize_text_field( trim( (string) $item->category ) );
-                                    if ( ! empty( $cat_name ) && ! in_array( $cat_name, $unique_naver_categories, true ) ) {
-                                        $unique_naver_categories[] = $cat_name;
+                        $xml = $this->parse_rss_xml( $body );
+                        if ( $xml ) {
+                            if ( isset( $xml->channel->item ) ) {
+                                foreach ( $xml->channel->item as $item ) {
+                                    if ( isset( $item->category ) ) {
+                                        $cat_name = sanitize_text_field( trim( (string) $item->category ) );
+                                        if ( ! empty( $cat_name ) && ! in_array( $cat_name, $unique_naver_categories, true ) ) {
+                                            $unique_naver_categories[] = $cat_name;
+                                        }
                                     }
                                 }
                             }

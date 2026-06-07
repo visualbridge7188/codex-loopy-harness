@@ -768,9 +768,43 @@ function test_category_mapping_and_auto_create() {
     echo "PASS: Category Mapping and Auto Create Test\n";
 }
 
+function test_rss_xml_encoding_conversion() {
+    $instance = Naver_RSS_Sync_Ultimate::get_instance();
+    
+    $xml_utf8 = '<?xml version="1.0" encoding="EUC-KR" ?>
+    <rss version="2.0">
+      <channel>
+        <title>한글 타이틀 테스트</title>
+        <item>
+          <title>한글 본문 테스트</title>
+          <description><![CDATA[이것은 EUC-KR 한글 내용입니다.]]></description>
+        </item>
+      </channel>
+    </rss>';
+    
+    if ( function_exists( 'mb_convert_encoding' ) ) {
+        $xml_euc_kr = mb_convert_encoding( $xml_utf8, 'EUC-KR', 'UTF-8' );
+    } else {
+        $xml_euc_kr = iconv( 'UTF-8', 'EUC-KR//IGNORE', $xml_utf8 );
+    }
+    
+    $ref = new ReflectionMethod( 'Naver_RSS_Sync_Ultimate', 'parse_rss_xml' );
+    @$ref->setAccessible( true );
+    
+    $xml = $ref->invoke( $instance, $xml_euc_kr );
+    
+    assert( $xml !== false, "EUC-KR XML should be successfully parsed." );
+    assert( (string) $xml->channel->title === '한글 타이틀 테스트', "Title should match and be converted to UTF-8." );
+    assert( (string) $xml->channel->item->title === '한글 본문 테스트', "Item title should match and be converted to UTF-8." );
+    assert( (string) $xml->channel->item->description === '이것은 EUC-KR 한글 내용입니다.', "Description should match and be converted to UTF-8." );
+    
+    echo "PASS: RSS XML Encoding Conversion (EUC-KR -> UTF-8) Test\n";
+}
+
 // Execute all tests
 test_image_url_cleansing();
 test_rss_xml_parsing();
 test_seo_and_canonical_logic();
 test_shortcode_rendering_engine();
 test_category_mapping_and_auto_create();
+test_rss_xml_encoding_conversion();
