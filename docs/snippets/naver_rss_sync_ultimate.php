@@ -69,6 +69,12 @@ class Naver_RSS_Sync_Ultimate {
         // 4. Cron hook & Setup
         add_action( 'naver_rss_sync_cron_hook', [ $this, 'run_sync' ] );
         add_action( 'init', [ $this, 'setup_cron_schedule' ] );
+
+        // 5. SEO & Canonical hooks
+        add_action( 'wp_head', [ $this, 'inject_canonical_and_noindex' ], 1 );
+        add_filter( 'wp_sitemaps_post_types', [ $this, 'exclude_from_sitemaps' ] );
+        add_filter( 'wpseo_canonical', [ $this, 'override_canonical' ] );
+        add_filter( 'rank_math/frontend/canonical', [ $this, 'override_canonical' ] );
     }
 
     /**
@@ -1048,6 +1054,74 @@ class Naver_RSS_Sync_Ultimate {
             </form>
         </div>
         <?php
+    }
+
+    /**
+     * Inject canonical tag and noindex robots meta for imported posts
+     */
+    public function inject_canonical_and_noindex() {
+        if ( ! is_singular() ) {
+            return;
+        }
+
+        $post_id = get_the_ID();
+        if ( ! $post_id ) {
+            return;
+        }
+
+        $naver_url = get_post_meta( $post_id, '_naver_link', true );
+        if ( empty( $naver_url ) ) {
+            $naver_url = get_post_meta( $post_id, '_naver_original_url', true );
+        }
+
+        if ( empty( $naver_url ) ) {
+            return;
+        }
+
+        // Disable WordPress default canonical link
+        remove_action( 'wp_head', 'rel_canonical' );
+
+        // Inject canonical tag
+        echo '<link rel="canonical" href="' . esc_url( $naver_url ) . '" />' . "\n";
+
+        // Inject noindex robots meta tag
+        echo '<meta name="robots" content="noindex, nofollow" />' . "\n";
+    }
+
+    /**
+     * Exclude the custom post type from WordPress default sitemaps to prevent indexing
+     * 
+     * @param array $post_types
+     * @return array
+     */
+    public function exclude_from_sitemaps( $post_types ) {
+        $target_post_type = $this->options['post_type_selection'] ?? 'naver_blog';
+        if ( 'naver_blog' === $target_post_type && isset( $post_types['naver_blog'] ) ) {
+            unset( $post_types['naver_blog'] );
+        }
+        return $post_types;
+    }
+
+    /**
+     * Override canonical URL for Yoast SEO and Rank Math
+     * 
+     * @param string $canonical
+     * @return string
+     */
+    public function override_canonical( $canonical ) {
+        if ( is_singular() ) {
+            $post_id = get_the_ID();
+            if ( $post_id ) {
+                $naver_url = get_post_meta( $post_id, '_naver_link', true );
+                if ( empty( $naver_url ) ) {
+                    $naver_url = get_post_meta( $post_id, '_naver_original_url', true );
+                }
+                if ( ! empty( $naver_url ) ) {
+                    return $naver_url;
+                }
+            }
+        }
+        return $canonical;
     }
 
     /**
