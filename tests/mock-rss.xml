@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<rss version="2.0">
+  <channel>
+    <title>네이버 블로그 RSS 테스트</title>
+    <link>https://blog.naver.com/test</link>
+    <item>
+      <title>샘플 글 제목 1</title>
+      <link>https://blog.naver.com/test/12345</link>
+      <description><![CDATA[본문 내용에 이미지가 들어있습니다. <img src="https://postfiles.pstatic.net/test_img1.jpg?type=w80_r80">]]></description>
+      <category>일상</category>
+      <pubDate>Sun, 07 Jun 2026 12:00:00 +0900</pubDate>
+      <guid>https://blog.naver.com/test/12345</guid>
+    </item>
+  </channel>
+</rss>
