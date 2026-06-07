@@ -1016,6 +1016,13 @@ class Naver_RSS_Sync_Ultimate {
         </div>
         <?php
     }
+
+    /**
+     * Clear scheduled cron hook on plugin deactivation.
+     */
+    public static function deactivate() {
+        wp_clear_scheduled_hook( 'naver_rss_sync_cron_hook' );
+    }
 }
 
 // Initialize Singleton
