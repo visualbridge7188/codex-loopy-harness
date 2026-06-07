@@ -7,6 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 $GLOBALS['wp_hooks'] = [];
 $GLOBALS['wp_meta'] = [];
 $GLOBALS['wp_options'] = [];
+$GLOBALS['wp_shortcodes'] = [];
+$GLOBALS['mock_posts'] = [];
 $GLOBALS['current_post_id'] = 0;
 $GLOBALS['is_singular_mock'] = false;
 
@@ -78,6 +80,166 @@ if ( ! function_exists( 'esc_url' ) ) {
 if ( ! function_exists( 'is_admin' ) ) {
     function is_admin() {
         return false;
+    }
+}
+
+if ( ! function_exists( 'add_shortcode' ) ) {
+    function add_shortcode( $tag, $callback ) {
+        $GLOBALS['wp_shortcodes'][$tag] = $callback;
+    }
+}
+
+if ( ! function_exists( 'shortcode_atts' ) ) {
+    function shortcode_atts( $pairs, $atts, $shortcode = '' ) {
+        $atts = (array)$atts;
+        $out = [];
+        foreach ( $pairs as $name => $default ) {
+            if ( array_key_exists( $name, $atts ) ) {
+                $out[$name] = $atts[$name];
+            } else {
+                $out[$name] = $default;
+            }
+        }
+        return $out;
+    }
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+    function esc_html( $text ) {
+        return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+    }
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+    function esc_html_e( $text, $domain = 'default' ) {
+        echo esc_html( $text );
+    }
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+    function esc_html__( $text, $domain = 'default' ) {
+        return esc_html( $text );
+    }
+}
+
+if ( ! function_exists( '__' ) ) {
+    function __( $text, $domain = 'default' ) {
+        return $text;
+    }
+}
+
+if ( ! function_exists( '_e' ) ) {
+    function _e( $text, $domain = 'default' ) {
+        echo $text;
+    }
+}
+
+if ( ! function_exists( 'get_permalink' ) ) {
+    function get_permalink( $post = 0 ) {
+        $id = $post ? ( is_object( $post ) ? $post->ID : $post ) : $GLOBALS['current_post_id'];
+        return 'https://example.com/post-' . $id;
+    }
+}
+
+if ( ! function_exists( 'get_the_title' ) ) {
+    function get_the_title( $post = 0 ) {
+        if ( isset( $GLOBALS['post'] ) && ( ! $post || $post === $GLOBALS['current_post_id'] ) ) {
+            return $GLOBALS['post']->post_title;
+        }
+        return 'Mock Title';
+    }
+}
+
+if ( ! function_exists( 'get_the_date' ) ) {
+    function get_the_date( $d = '', $post = null ) {
+        return '2026.06.08';
+    }
+}
+
+if ( ! function_exists( 'get_the_excerpt' ) ) {
+    function get_the_excerpt( $post = null ) {
+        if ( isset( $GLOBALS['post'] ) ) {
+            return $GLOBALS['post']->post_excerpt ?? '';
+        }
+        return 'Mock Excerpt';
+    }
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+    function wp_strip_all_tags( $string, $remove_breaks = false ) {
+        return strip_tags( $string );
+    }
+}
+
+if ( ! function_exists( 'get_the_content' ) ) {
+    function get_the_content( $more_link_text = null, $strip_teaser = false, $post = null ) {
+        if ( isset( $GLOBALS['post'] ) ) {
+            return $GLOBALS['post']->post_content ?? '';
+        }
+        return 'Mock Content';
+    }
+}
+
+if ( ! function_exists( 'wp_html_excerpt' ) ) {
+    function wp_html_excerpt( $str, $count, $more = null ) {
+        if ( null === $more ) {
+            $more = '&hellip;';
+        }
+        $str = wp_strip_all_tags( $str );
+        if ( mb_strlen( $str ) > $count ) {
+            return mb_substr( $str, 0, $count ) . $more;
+        }
+        return $str;
+    }
+}
+
+if ( ! function_exists( 'has_post_thumbnail' ) ) {
+    function has_post_thumbnail( $post = null ) {
+        if ( isset( $GLOBALS['post'] ) ) {
+            return ! empty( $GLOBALS['post']->has_thumb );
+        }
+        return false;
+    }
+}
+
+if ( ! function_exists( 'the_post_thumbnail' ) ) {
+    function the_post_thumbnail( $size = 'post-thumbnail', $attr = '' ) {
+        echo '<img src="https://example.com/mock-thumb.jpg" class="wp-post-image" />';
+    }
+}
+
+if ( ! function_exists( 'wp_reset_postdata' ) ) {
+    function wp_reset_postdata() {
+        unset( $GLOBALS['post'] );
+        $GLOBALS['current_post_id'] = 0;
+    }
+}
+
+if ( ! class_exists( 'WP_Query' ) ) {
+    class WP_Query {
+        public $posts = [];
+        public $current_post = -1;
+        public $post_count = 0;
+        public $post;
+
+        public function __construct( $args = [] ) {
+            $this->posts = isset( $GLOBALS['mock_posts'] ) ? $GLOBALS['mock_posts'] : [];
+            $this->post_count = count( $this->posts );
+        }
+
+        public function have_posts() {
+            if ( $this->current_post + 1 < $this->post_count ) {
+                return true;
+            }
+            return false;
+        }
+
+        public function the_post() {
+            $this->current_post++;
+            $this->post = $this->posts[$this->current_post];
+            $GLOBALS['post'] = $this->post;
+            $GLOBALS['current_post_id'] = $this->post->ID;
+        }
     }
 }
 
@@ -207,7 +369,58 @@ function test_seo_and_canonical_logic() {
     echo "PASS: SEO Canonical and Sitemap Exclusion Logic Test\n";
 }
 
+function test_shortcode_rendering_engine() {
+    $instance = Naver_RSS_Sync_Ultimate::get_instance();
+    
+    // 1. Verify shortcode is registered
+    assert( isset( $GLOBALS['wp_shortcodes']['naver_rss_archive'] ), "Shortcode should be registered" );
+    
+    // Create mock posts
+    $post1 = (object)[
+        'ID'           => 101,
+        'post_title'   => 'Toss Style Post Title',
+        'post_excerpt' => 'This is the excerpt for post 101',
+        'post_content' => 'This is the content for post 101',
+        'has_thumb'    => true,
+    ];
+    
+    $post2 = (object)[
+        'ID'           => 102,
+        'post_title'   => 'Magazine Style Post Title',
+        'post_excerpt' => 'This is the excerpt for post 102',
+        'post_content' => 'This is the content for post 102',
+        'has_thumb'    => false,
+    ];
+    
+    $GLOBALS['mock_posts'] = [ $post1, $post2 ];
+    
+    // Test Toss layout rendering (explicit style parameter)
+    $toss_html = $instance->render_archive_shortcode( [ 'style' => 'toss' ] );
+    assert( strpos( $toss_html, 'css-toss-wrap' ) !== false, "Output should contain toss-wrap" );
+    assert( strpos( $toss_html, 'Toss Style Post Title' ) !== false, "Output should contain Toss Style Post Title" );
+    assert( strpos( $toss_html, 'wp-post-image' ) !== false, "Post 101 should render post thumbnail" );
+    
+    // Test Magazine layout rendering (explicit style parameter)
+    $mag_html = $instance->render_archive_shortcode( [ 'style' => 'magazine' ] );
+    assert( strpos( $mag_html, 'css-magazine-wrap' ) !== false, "Output should contain magazine-wrap" );
+    assert( strpos( $mag_html, 'Magazine Style Post Title' ) !== false, "Output should contain Magazine Style Post Title" );
+    assert( strpos( $mag_html, 'nrsu-magazine-svg-placeholder' ) !== false, "Post 102 should render SVG placeholder" );
+
+    // Test default fallback (configured via options)
+    // Toss is the default
+    $default_html = $instance->render_archive_shortcode( [] );
+    assert( strpos( $default_html, 'css-toss-wrap' ) !== false, "Default style should be Toss" );
+
+    // No posts case
+    $GLOBALS['mock_posts'] = [];
+    $no_posts_html = $instance->render_archive_shortcode( [] );
+    assert( strpos( $no_posts_html, 'nrsu-no-posts' ) !== false, "Should render no posts message when empty" );
+
+    echo "PASS: Shortcode Registration and Layout Rendering Engine Test\n";
+}
+
 // Execute all tests
 test_image_url_cleansing();
 test_rss_xml_parsing();
 test_seo_and_canonical_logic();
+test_shortcode_rendering_engine();

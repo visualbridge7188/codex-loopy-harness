@@ -75,6 +75,9 @@ class Naver_RSS_Sync_Ultimate {
         add_filter( 'wp_sitemaps_post_types', [ $this, 'exclude_from_sitemaps' ] );
         add_filter( 'wpseo_canonical', [ $this, 'override_canonical' ] );
         add_filter( 'rank_math/frontend/canonical', [ $this, 'override_canonical' ] );
+
+        // 6. Shortcode registration
+        add_shortcode( 'naver_rss_archive', [ $this, 'render_archive_shortcode' ] );
     }
 
     /**
@@ -89,6 +92,7 @@ class Naver_RSS_Sync_Ultimate {
             'use_classic_editor'  => 1,            // Force classic editor (1 = true, 0 = false)
             'sync_interval'       => 'twicedaily',
             'post_status'         => 'draft',
+            'archive_style'       => 'toss',
         ];
     }
 
@@ -172,6 +176,9 @@ class Naver_RSS_Sync_Ultimate {
         
         $output['sync_interval'] = isset( $input['sync_interval'] ) ? sanitize_text_field( $input['sync_interval'] ) : 'twicedaily';
         $output['post_status'] = isset( $input['post_status'] ) && in_array( $input['post_status'], [ 'draft', 'publish' ], true ) ? $input['post_status'] : 'draft';
+
+        // Archive Style selection validation
+        $output['archive_style'] = ( isset( $input['archive_style'] ) && in_array( $input['archive_style'], [ 'toss', 'magazine' ], true ) ) ? $input['archive_style'] : 'toss';
 
         return $output;
     }
@@ -839,8 +846,8 @@ class Naver_RSS_Sync_Ultimate {
             <script>
                 jQuery(document).ready(function($) {
                     // Update CSS class on radio boxes based on selection
-                    $('input[name="naver_rss_sync_ultimate_settings[post_type_selection]"]').on('change', function() {
-                        $('.nrsu-radio-box').removeClass('selected');
+                    $('.nrsu-radio-group input[type="radio"]').on('change', function() {
+                        $(this).closest('.nrsu-radio-group').find('.nrsu-radio-box').removeClass('selected');
                         $(this).closest('.nrsu-radio-box').addClass('selected');
                     });
                 });
@@ -902,7 +909,7 @@ class Naver_RSS_Sync_Ultimate {
                         <?php $this->render_basic_settings( $v, $c ); ?>
 
                         <!-- Card 2: Compatibility & Editor Override -->
-                        <?php $this->render_compatibility_settings( $c, $s ); ?>
+                        <?php $this->render_compatibility_settings( $v, $c, $s ); ?>
                     </form>
                 </div>
 
@@ -964,7 +971,7 @@ class Naver_RSS_Sync_Ultimate {
     /**
      * Render Card 2: Compatibility Settings
      */
-    private function render_compatibility_settings( $c, $s ) {
+    private function render_compatibility_settings( $v, $c, $s ) {
         ?>
         <div class="nrsu-card">
             <h2>
@@ -981,6 +988,29 @@ class Naver_RSS_Sync_Ultimate {
                     <label class="nrsu-switch">
                         <input type="checkbox" name="naver_rss_sync_ultimate_settings[use_classic_editor]" value="1" <?php echo $c('use_classic_editor', 1); ?>>
                         <span class="nrsu-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="nrsu-field">
+                <label class="nrsu-label">기본 아카이브 스타일 (Default Archive Style)</label>
+                <div class="nrsu-radio-group">
+                    <!-- Toss Style -->
+                    <label class="nrsu-radio-box <?php echo ( $v('archive_style') === 'toss' ) ? 'selected' : ''; ?>">
+                        <input type="radio" name="naver_rss_sync_ultimate_settings[archive_style]" value="toss" <?php echo $c('archive_style', 'toss'); ?>>
+                        <div>
+                            <span class="nrsu-radio-label-title">Toss 스타일 (Responsive Card)</span>
+                            <span class="nrsu-radio-label-desc">라이트 모드 친화적인 미니멀 반응형 카드 디자인으로 가독성을 높입니다.</span>
+                        </div>
+                    </label>
+
+                    <!-- Magazine Style -->
+                    <label class="nrsu-radio-box <?php echo ( $v('archive_style') === 'magazine' ) ? 'selected' : ''; ?>">
+                        <input type="radio" name="naver_rss_sync_ultimate_settings[archive_style]" value="magazine" <?php echo $c('archive_style', 'magazine'); ?>>
+                        <div>
+                            <span class="nrsu-radio-label-title">Magazine 스타일 (Dark Grid)</span>
+                            <span class="nrsu-radio-label-desc">노바미라 스타일의 고급스러운 어두운 그리드 디자인을 적용합니다.</span>
+                        </div>
                     </label>
                 </div>
             </div>
@@ -1122,6 +1152,439 @@ class Naver_RSS_Sync_Ultimate {
             }
         }
         return $canonical;
+    }
+
+    /**
+     * Render the Naver RSS archive shortcode.
+     * 
+     * @param array $atts
+     * @return string
+     */
+    public function render_archive_shortcode( $atts ) {
+        $atts = shortcode_atts(
+            [
+                'style' => $this->options['archive_style'] ?? 'toss',
+                'limit' => 10,
+            ],
+            $atts,
+            'naver_rss_archive'
+        );
+
+        $limit = intval( $atts['limit'] );
+        $style = in_array( $atts['style'], [ 'toss', 'magazine' ], true ) ? $atts['style'] : 'toss';
+
+        $post_type = $this->options['post_type_selection'] ?? 'naver_blog';
+
+        $args = [
+            'post_type'      => $post_type,
+            'post_status'    => 'publish',
+            'posts_per_page' => $limit,
+            'meta_query'     => [
+                [
+                    'key'     => '_naver_guid',
+                    'compare' => 'EXISTS',
+                ],
+            ],
+            'no_found_rows'  => true,
+        ];
+
+        $query = new WP_Query( $args );
+
+        if ( ! $query->have_posts() ) {
+            wp_reset_postdata();
+            return '<p class="nrsu-no-posts">' . esc_html__( '등록된 네이버 블로그 글이 없습니다.', 'naver-rss-sync-ultimate' ) . '</p>';
+        }
+
+        ob_start();
+        if ( 'magazine' === $style ) {
+            $this->render_magazine_html( $query );
+        } else {
+            $this->render_toss_html( $query );
+        }
+        $html = ob_get_clean();
+
+        wp_reset_postdata();
+        return $html;
+    }
+
+    /**
+     * Render Toss style layout HTML.
+     * 
+     * @param WP_Query $query
+     */
+    private function render_toss_html( $query ) {
+        ?>
+        <style>
+            .nrsu-toss-archive {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 24px;
+                padding: 16px 0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+            .nrsu-toss-card {
+                background: #ffffff;
+                border-radius: 18px;
+                overflow: hidden;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+                transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+                border: 1px solid rgba(0, 0, 0, 0.04);
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+            }
+            .nrsu-toss-card:hover {
+                transform: translateY(-6px);
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+            }
+            .nrsu-toss-thumb-link {
+                display: block;
+                width: 100%;
+                padding-top: 56.25%;
+                position: relative;
+                background: #f1f3f5;
+                overflow: hidden;
+            }
+            .nrsu-toss-thumb {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.5s ease;
+            }
+            .nrsu-toss-card:hover .nrsu-toss-thumb {
+                transform: scale(1.05);
+            }
+            .nrsu-toss-content {
+                padding: 24px;
+                display: flex;
+                flex-direction: column;
+                flex-grow: 1;
+            }
+            .nrsu-toss-meta {
+                font-size: 13px;
+                color: #868e96;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .nrsu-toss-badge {
+                background: rgba(3, 199, 90, 0.08);
+                color: #03C75A;
+                font-weight: 600;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 11px;
+                text-transform: uppercase;
+            }
+            .nrsu-toss-title {
+                font-size: 18px;
+                font-weight: 700;
+                line-height: 1.4;
+                margin: 0 0 12px 0;
+                color: #191f28;
+            }
+            .nrsu-toss-title a {
+                color: inherit;
+                text-decoration: none;
+                transition: color 0.2s ease;
+            }
+            .nrsu-toss-title a:hover {
+                color: #03C75A;
+            }
+            .nrsu-toss-excerpt {
+                font-size: 14px;
+                line-height: 1.6;
+                color: #4e5968;
+                margin-bottom: 20px;
+                flex-grow: 1;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .nrsu-toss-footer {
+                border-top: 1px solid #f1f3f5;
+                padding-top: 16px;
+                margin-top: auto;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .nrsu-toss-readmore {
+                font-size: 13px;
+                font-weight: 600;
+                color: #03C75A;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .nrsu-toss-readmore:hover {
+                color: #02a64b;
+            }
+            .nrsu-toss-svg-placeholder {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #dee2e6;
+            }
+        </style>
+        <div class="nrsu-toss-archive css-toss-wrap">
+            <?php while ( $query->have_posts() ) : $query->the_post(); ?>
+                <?php
+                $permalink = get_permalink();
+                $title     = get_the_title();
+                $date      = get_the_date( 'Y.m.d' );
+                $excerpt   = get_the_excerpt();
+                if ( empty( $excerpt ) ) {
+                    $excerpt = wp_strip_all_tags( get_the_content() );
+                }
+                $excerpt = wp_html_excerpt( $excerpt, 120, '...' );
+                ?>
+                <article class="nrsu-toss-card toss-card-item">
+                    <?php if ( has_post_thumbnail() ) : ?>
+                        <a href="<?php echo esc_url( $permalink ); ?>" class="nrsu-toss-thumb-link">
+                            <?php the_post_thumbnail( 'medium_large', [ 'class' => 'nrsu-toss-thumb' ] ); ?>
+                        </a>
+                    <?php else : ?>
+                        <a href="<?php echo esc_url( $permalink ); ?>" class="nrsu-toss-thumb-link">
+                            <div class="nrsu-toss-svg-placeholder">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                        </a>
+                    <?php endif; ?>
+                    <div class="nrsu-toss-content">
+                        <div class="nrsu-toss-meta">
+                            <span class="nrsu-toss-badge"><?php esc_html_e( 'Naver Blog', 'naver-rss-sync-ultimate' ); ?></span>
+                            <span class="nrsu-toss-date"><?php echo esc_html( $date ); ?></span>
+                        </div>
+                        <h3 class="nrsu-toss-title">
+                            <a href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $title ); ?></a>
+                        </h3>
+                        <p class="nrsu-toss-excerpt"><?php echo esc_html( $excerpt ); ?></p>
+                        <div class="nrsu-toss-footer">
+                            <a href="<?php echo esc_url( $permalink ); ?>" class="nrsu-toss-readmore">
+                                <?php esc_html_e( '자세히 보기', 'naver-rss-sync-ultimate' ); ?>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            <?php endwhile; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render Magazine style layout HTML.
+     * 
+     * @param WP_Query $query
+     */
+    private function render_magazine_html( $query ) {
+        ?>
+        <style>
+            .nrsu-magazine-archive {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 30px;
+                padding: 30px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                background: #0b0f19;
+                border-radius: 20px;
+                border: 1px solid #1f293d;
+            }
+            .nrsu-magazine-card {
+                background: #111827;
+                border: 1px solid #1f2937;
+                border-radius: 16px;
+                overflow: hidden;
+                transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                position: relative;
+            }
+            .nrsu-magazine-card:hover {
+                transform: translateY(-8px);
+                border-color: #3b82f6;
+                box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+            }
+            .nrsu-magazine-thumb-link {
+                display: block;
+                width: 100%;
+                padding-top: 60%;
+                position: relative;
+                overflow: hidden;
+                background: #1f2937;
+            }
+            .nrsu-magazine-thumb {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+                filter: brightness(0.9);
+            }
+            .nrsu-magazine-card:hover .nrsu-magazine-thumb {
+                transform: scale(1.08);
+                filter: brightness(1.05);
+            }
+            .nrsu-magazine-content {
+                padding: 26px;
+                display: flex;
+                flex-direction: column;
+                flex-grow: 1;
+            }
+            .nrsu-magazine-meta {
+                font-size: 12px;
+                font-weight: 500;
+                color: #6b7280;
+                margin-bottom: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .nrsu-magazine-badge {
+                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                color: #ffffff;
+                font-weight: 700;
+                padding: 3px 10px;
+                border-radius: 6px;
+                font-size: 10px;
+            }
+            .nrsu-magazine-title {
+                font-size: 20px;
+                font-weight: 800;
+                line-height: 1.35;
+                margin: 0 0 14px 0;
+                color: #f3f4f6;
+                letter-spacing: -0.02em;
+            }
+            .nrsu-magazine-title a {
+                color: inherit;
+                text-decoration: none;
+                transition: color 0.3s ease;
+            }
+            .nrsu-magazine-title a:hover {
+                color: #3b82f6;
+            }
+            .nrsu-magazine-excerpt {
+                font-size: 14px;
+                line-height: 1.6;
+                color: #9ca3af;
+                margin-bottom: 24px;
+                flex-grow: 1;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .nrsu-magazine-footer {
+                border-top: 1px solid #1f2937;
+                padding-top: 18px;
+                margin-top: auto;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .nrsu-magazine-date {
+                color: #4b5563;
+                font-size: 12px;
+            }
+            .nrsu-magazine-readmore {
+                font-size: 13px;
+                font-weight: 700;
+                color: #3b82f6;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                transition: gap 0.2s ease;
+            }
+            .nrsu-magazine-readmore:hover {
+                color: #60a5fa;
+                gap: 6px;
+            }
+            .nrsu-magazine-svg-placeholder {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #4b5563;
+            }
+        </style>
+        <div class="nrsu-magazine-archive css-magazine-wrap">
+            <?php while ( $query->have_posts() ) : $query->the_post(); ?>
+                <?php
+                $permalink = get_permalink();
+                $title     = get_the_title();
+                $date      = get_the_date( 'Y.m.d' );
+                $excerpt   = get_the_excerpt();
+                if ( empty( $excerpt ) ) {
+                    $excerpt = wp_strip_all_tags( get_the_content() );
+                }
+                $excerpt = wp_html_excerpt( $excerpt, 120, '...' );
+                ?>
+                <article class="nrsu-magazine-card magazine-card-item">
+                    <?php if ( has_post_thumbnail() ) : ?>
+                        <a href="<?php echo esc_url( $permalink ); ?>" class="nrsu-magazine-thumb-link">
+                            <?php the_post_thumbnail( 'medium_large', [ 'class' => 'nrsu-magazine-thumb' ] ); ?>
+                        </a>
+                    <?php else : ?>
+                        <a href="<?php echo esc_url( $permalink ); ?>" class="nrsu-magazine-thumb-link">
+                            <div class="nrsu-magazine-svg-placeholder">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                        </a>
+                    <?php endif; ?>
+                    <div class="nrsu-magazine-content">
+                        <div class="nrsu-magazine-meta">
+                            <span class="nrsu-magazine-badge"><?php esc_html_e( 'Naver Blog', 'naver-rss-sync-ultimate' ); ?></span>
+                            <span class="nrsu-magazine-date"><?php echo esc_html( $date ); ?></span>
+                        </div>
+                        <h3 class="nrsu-magazine-title">
+                            <a href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $title ); ?></a>
+                        </h3>
+                        <p class="nrsu-magazine-excerpt"><?php echo esc_html( $excerpt ); ?></p>
+                        <div class="nrsu-magazine-footer">
+                            <span class="nrsu-magazine-date"><?php echo esc_html( $date ); ?></span>
+                            <a href="<?php echo esc_url( $permalink ); ?>" class="nrsu-magazine-readmore">
+                                <?php esc_html_e( '자세히 보기', 'naver-rss-sync-ultimate' ); ?>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            <?php endwhile; ?>
+        </div>
+        <?php
     }
 
     /**
