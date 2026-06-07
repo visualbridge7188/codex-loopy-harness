@@ -345,7 +345,7 @@ class Naver_RSS_Sync_Ultimate {
             }
 
             $title = sanitize_text_field( (string) $item->title );
-            $content = (string) $item->description;
+            $content = wp_kses_post( (string) $item->description );
             $pub_date = (string) $item->pubDate;
 
             $post_date = '';
@@ -459,16 +459,49 @@ class Naver_RSS_Sync_Ultimate {
         }
 
         // 3. Sideload the image
-        if ( ! function_exists( 'media_sideload_image' ) ) {
+        if ( ! function_exists( 'media_handle_sideload' ) ) {
             require_once ABSPATH . 'wp-admin/includes/media.php';
             require_once ABSPATH . 'wp-admin/includes/file.php';
             require_once ABSPATH . 'wp-admin/includes/image.php';
         }
 
-        // media_sideload_image with 'id' parameter returns the attachment ID
-        $attachment_id = media_sideload_image( $clean_url, $post_id, null, 'id' );
+        // Add filter to bypass Naver CDN hotlinking protection (Referer and User-Agent check)
+        $referer_filter = function( $args, $url ) {
+            $args['headers']['Referer'] = 'https://blog.naver.com/';
+            $args['headers']['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+            return $args;
+        };
+        add_filter( 'http_request_args', $referer_filter, 10, 2 );
+
+        // Download the image to a temp file
+        $tmp_file = download_url( $clean_url, 15 );
+
+        // Remove filter immediately after download
+        remove_filter( 'http_request_args', $referer_filter, 10 );
+
+        if ( is_wp_error( $tmp_file ) ) {
+            return $tmp_file;
+        }
+
+        // Determine correct file name/extension
+        $url_path = parse_url( $clean_url, PHP_URL_PATH );
+        $filename = basename( $url_path );
+        
+        // Default to jpg extension if none exists in the filename
+        if ( ! pathinfo( $filename, PATHINFO_EXTENSION ) ) {
+            $filename .= '.jpg';
+        }
+
+        $file_array = [
+            'tmp_name' => $tmp_file,
+            'name'     => $filename,
+        ];
+
+        // Sideload the image and create attachment
+        $attachment_id = media_handle_sideload( $file_array, $post_id );
 
         if ( is_wp_error( $attachment_id ) ) {
+            @unlink( $tmp_file );
             return $attachment_id;
         }
 
