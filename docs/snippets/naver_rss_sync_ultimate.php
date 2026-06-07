@@ -584,7 +584,7 @@ class Naver_RSS_Sync_Ultimate {
         }
 
         $encoding = 'UTF-8';
-        if ( preg_match( '/encoding=["\'](.*?)["\']/i', $body, $m ) ) {
+        if ( preg_match( '/^<\?xml[^>]+encoding=["\'](.*?)["\']/i', $body, $m ) ) {
             $encoding = strtoupper( $m[1] );
         }
 
@@ -1081,7 +1081,6 @@ class Naver_RSS_Sync_Ultimate {
             if ( false !== $cached_categories && is_array( $cached_categories ) ) {
                 $unique_naver_categories = $cached_categories;
             } else {
-                libxml_use_internal_errors( true );
                 $response = wp_remote_get( $rss_url, [ 'timeout' => 5 ] );
                 if ( ! is_wp_error( $response ) ) {
                     $body = wp_remote_retrieve_body( $response );
@@ -1108,7 +1107,6 @@ class Naver_RSS_Sync_Ultimate {
                 } else {
                     $fetch_error_msg = 'RSS 피드를 가져오는 데 실패했습니다: ' . $response->get_error_message();
                 }
-                libxml_clear_errors();
             }
         } else {
             $fetch_error_msg = '유효한 RSS 주소를 입력하고 저장해 주세요.';
