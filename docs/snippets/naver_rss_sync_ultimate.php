@@ -46,22 +46,29 @@ class Naver_RSS_Sync_Ultimate {
      * Constructor (Private to enforce Singleton)
      */
     private function __construct() {
-        // Load options
-        $this->options = get_option( $this->option_name ) ?: $this->get_default_options();
+        // Load options safely with wp_parse_args to prevent undefined index warnings
+        $raw_options = get_option( $this->option_name );
+        $raw_options = is_array( $raw_options ) ? $raw_options : [];
+        $this->options = wp_parse_args( $raw_options, $this->get_default_options() );
 
         // 1. CPT Registration
         add_action( 'init', [ $this, 'register_naver_blog_cpt' ] );
 
-        // 2. Admin Logic
+        // 2. Admin Logic & Actions
         if ( is_admin() ) {
             add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
             add_action( 'admin_init', [ $this, 'register_settings' ] );
             add_action( 'admin_head', [ $this, 'enqueue_admin_styles' ] );
             add_action( 'admin_footer', [ $this, 'print_admin_scripts' ] );
+            add_action( 'admin_post_nrsu_run_sync', [ $this, 'handle_manual_sync' ] );
         }
 
-        // 3. Classic Editor Override Filter (Gutenberg Block Editor bypass)
-        add_filter( 'use_block_editor_for_post_type', [ $this, 'disable_gutenberg_editor' ], 10, 2 );
+        // 3. Classic Editor Override Filter (Selective Gutenberg Block Editor bypass)
+        add_filter( 'use_block_editor_for_post', [ $this, 'disable_gutenberg_editor_for_post' ], 10, 2 );
+
+        // 4. Cron hook & Setup
+        add_action( 'naver_rss_sync_cron_hook', [ $this, 'run_sync' ] );
+        add_action( 'init', [ $this, 'setup_cron_schedule' ] );
     }
 
     /**
@@ -170,17 +177,308 @@ class Naver_RSS_Sync_Ultimate {
      * @param string $post_type
      * @return bool
      */
-    public function disable_gutenberg_editor( $use_block_editor, $post_type ) {
+    /**
+     * Disable block editor for specific posts to prevent white-screens/errors
+     * 
+     * @param bool $use_block_editor
+     * @param WP_Post $post
+     * @return bool
+     */
+    public function disable_gutenberg_editor_for_post( $use_block_editor, $post ) {
+        if ( ! $post instanceof WP_Post ) {
+            return $use_block_editor;
+        }
+
         $force_classic = $this->options['use_classic_editor'] ?? 1;
+        if ( ! $force_classic ) {
+            return $use_block_editor;
+        }
+
         $target_post_type = $this->options['post_type_selection'] ?? 'naver_blog';
 
-        if ( $force_classic ) {
-            // Apply classic editor block to the configured target post type, and always to 'naver_blog' CPT
-            if ( $post_type === $target_post_type || $post_type === 'naver_blog' ) {
+        // Always disable block editor for CPT naver_blog
+        if ( 'naver_blog' === $post->post_type ) {
+            return false;
+        }
+
+        // For target post type (e.g. post), disable Gutenberg ONLY if it was imported from Naver RSS
+        if ( $post->post_type === $target_post_type ) {
+            $guid = get_post_meta( $post->ID, '_naver_guid', true );
+            if ( ! empty( $guid ) ) {
                 return false;
             }
         }
+
         return $use_block_editor;
+    }
+
+    /**
+     * Setup or reschedule WP-Cron based on settings
+     */
+    public function setup_cron_schedule() {
+        $interval = $this->options['sync_interval'] ?? 'twicedaily';
+        $hook = 'naver_rss_sync_cron_hook';
+
+        if ( 'manual' === $interval ) {
+            wp_clear_scheduled_hook( $hook );
+        } else {
+            if ( ! wp_next_scheduled( $hook ) ) {
+                wp_schedule_event( time(), $interval, $hook );
+            } else {
+                $schedule = wp_get_schedule( $hook );
+                if ( $schedule !== $interval ) {
+                    wp_clear_scheduled_hook( $hook );
+                    wp_schedule_event( time(), $interval, $hook );
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle manual sync button request from admin dashboard
+     */
+    public function handle_manual_sync() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( '권한이 없습니다.' );
+        }
+
+        check_admin_referer( 'nrsu_run_sync_action', 'nrsu_sync_nonce' );
+
+        $result = $this->run_sync();
+
+        if ( is_wp_error( $result ) ) {
+            $redirect_url = add_query_arg(
+                [
+                    'nrsu_sync_status' => 'error',
+                    'nrsu_sync_msg'    => urlencode( $result->get_error_message() ),
+                ],
+                menu_page_url( 'naver-rss-sync-ultimate', false )
+            );
+        } else {
+            $redirect_url = add_query_arg(
+                [
+                    'nrsu_sync_status' => 'success',
+                    'nrsu_sync_count'  => intval( $result ),
+                ],
+                menu_page_url( 'naver-rss-sync-ultimate', false )
+            );
+        }
+
+        wp_safe_redirect( $redirect_url );
+        exit;
+    }
+
+    /**
+     * Core synchronization runner
+     * Runs RSS fetching, parsing, and post generation with concurrency locks and duplicate checks
+     * 
+     * @return int|WP_Error Number of synced posts on success, WP_Error on failure
+     */
+    public function run_sync() {
+        $rss_url = $this->options['rss_url'] ?? '';
+        if ( empty( $rss_url ) || ! filter_var( $rss_url, FILTER_VALIDATE_URL ) ) {
+            return new WP_Error( 'invalid_url', '유효한 네이버 RSS 주소가 설정되지 않았습니다.' );
+        }
+
+        // Concurrency Lock using WP Transient
+        $lock_key = 'naver_rss_sync_lock';
+        if ( get_transient( $lock_key ) ) {
+            return new WP_Error( 'locked', '이미 동기화 작업이 실행 중입니다. 잠시 후 다시 시도해 주세요.' );
+        }
+        // Acquire lock for 5 minutes
+        set_transient( $lock_key, 1, 5 * MINUTE_IN_SECONDS );
+
+        // Fetch RSS feed content
+        $response = wp_remote_get( $rss_url, [ 'timeout' => 30 ] );
+        if ( is_wp_error( $response ) ) {
+            delete_transient( $lock_key );
+            return $response;
+        }
+
+        $body = wp_remote_retrieve_body( $response );
+        if ( empty( $body ) ) {
+            delete_transient( $lock_key );
+            return new WP_Error( 'empty_feed', 'RSS 피드 응답 본문이 비어 있습니다.' );
+        }
+
+        // Suppress XML errors during parsing
+        libxml_use_internal_errors( true );
+        $xml = simplexml_load_string( $body, 'SimpleXMLElement', LIBXML_NOCDATA );
+        if ( ! $xml ) {
+            delete_transient( $lock_key );
+            return new WP_Error( 'xml_parse_error', 'RSS XML 파싱에 실패했습니다.' );
+        }
+        libxml_clear_errors();
+
+        $items = isset( $xml->channel->item ) ? $xml->channel->item : [];
+        if ( empty( $items ) ) {
+            delete_transient( $lock_key );
+            $this->log_sync_status( 0, 'No items' );
+            return 0;
+        }
+
+        $target_post_type = $this->options['post_type_selection'] ?? 'naver_blog';
+        $post_status = $this->options['post_status'] ?? 'draft';
+        $synced_count = 0;
+
+        foreach ( $items as $item ) {
+            $guid = sanitize_text_field( (string) $item->guid );
+            $link = esc_url_raw( (string) $item->link );
+            if ( empty( $guid ) ) {
+                $guid = $link;
+            }
+
+            if ( empty( $guid ) ) {
+                continue;
+            }
+
+            // Check duplicate via meta key _naver_guid
+            global $wpdb;
+            $existing_post_id = $wpdb->get_var( $wpdb->prepare(
+                "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_naver_guid' AND meta_value = %s LIMIT 1",
+                $guid
+            ) );
+
+            if ( $existing_post_id ) {
+                // Duplicate found, skip
+                continue;
+            }
+
+            $title = sanitize_text_field( (string) $item->title );
+            $content = (string) $item->description;
+            $pub_date = (string) $item->pubDate;
+
+            $post_date = '';
+            if ( ! empty( $pub_date ) ) {
+                $timestamp = strtotime( $pub_date );
+                if ( $timestamp ) {
+                    $post_date = date( 'Y-m-d H:i:s', $timestamp );
+                }
+            }
+
+            // Prepare post arguments
+            $post_arr = [
+                'post_title'   => $title,
+                'post_content' => $content,
+                'post_status'  => $post_status,
+                'post_type'    => $target_post_type,
+            ];
+
+            if ( ! empty( $post_date ) ) {
+                $post_arr['post_date'] = $post_date;
+            }
+
+            // Insert post
+            $new_post_id = wp_insert_post( $post_arr );
+
+            if ( ! is_wp_error( $new_post_id ) && $new_post_id > 0 ) {
+                // Save meta keys
+                update_post_meta( $new_post_id, '_naver_guid', $guid );
+                update_post_meta( $new_post_id, '_naver_link', $link );
+
+                // Try to extract first image and set as featured thumbnail
+                $first_image_url = $this->extract_first_image_url( $content );
+                if ( ! empty( $first_image_url ) ) {
+                    $this->sideload_featured_image( $new_post_id, $first_image_url );
+                }
+
+                $synced_count++;
+            }
+        }
+
+        // Release lock
+        delete_transient( $lock_key );
+
+        // Log status
+        $this->log_sync_status( $synced_count, 'Success' );
+
+        return $synced_count;
+    }
+
+    /**
+     * Log the status and time of the last sync run
+     * 
+     * @param int $count
+     * @param string $status
+     */
+    private function log_sync_status( $count, $status ) {
+        update_option( 'naver_rss_sync_ultimate_last_sync', current_time( 'mysql' ) );
+        update_option( 'naver_rss_sync_ultimate_last_status', sprintf( '%s (신규 추가: %d개)', $status, $count ) );
+    }
+
+    /**
+     * Extract first image URL from content HTML
+     * 
+     * @param string $content
+     * @return string
+     */
+    private function extract_first_image_url( $content ) {
+        if ( preg_match( '/<img[^>]+src=["\']([^"\']+)["\']/i', $content, $matches ) ) {
+            return $matches[1];
+        }
+        return '';
+    }
+
+    /**
+     * Sideload an image and set it as the featured thumbnail for a post
+     * Strips query parameters, checks for existing downloads to prevent duplication
+     * 
+     * @param int $post_id
+     * @param string $image_url
+     * @return int|WP_Error Attachment ID on success, WP_Error on failure
+     */
+    public function sideload_featured_image( $post_id, $image_url ) {
+        if ( empty( $image_url ) ) {
+            return new WP_Error( 'empty_url', 'Image URL is empty.' );
+        }
+
+        // Clean URL to strip query parameters (strtok URL 클렌징)
+        $clean_url = strtok( $image_url, '?' );
+        $clean_url = esc_url_raw( trim( $clean_url ) );
+
+        if ( empty( $clean_url ) ) {
+            return new WP_Error( 'invalid_url', 'Cleaned image URL is invalid.' );
+        }
+
+        // 1. Check if post already has a thumbnail (get_post_thumbnail_id 체크)
+        $existing_thumbnail_id = get_post_thumbnail_id( $post_id );
+        if ( $existing_thumbnail_id ) {
+            return $existing_thumbnail_id;
+        }
+
+        // 2. Check if the image has already been downloaded (prevent duplicate attachments)
+        global $wpdb;
+        $attachment_id = $wpdb->get_var( $wpdb->prepare(
+            "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_naver_source_image_url' AND meta_value = %s LIMIT 1",
+            $clean_url
+        ) );
+
+        if ( $attachment_id ) {
+            set_post_thumbnail( $post_id, $attachment_id );
+            return (int) $attachment_id;
+        }
+
+        // 3. Sideload the image
+        if ( ! function_exists( 'media_sideload_image' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+        }
+
+        // media_sideload_image with 'id' parameter returns the attachment ID
+        $attachment_id = media_sideload_image( $clean_url, $post_id, null, 'id' );
+
+        if ( is_wp_error( $attachment_id ) ) {
+            return $attachment_id;
+        }
+
+        if ( is_numeric( $attachment_id ) && $attachment_id > 0 ) {
+            update_post_meta( $attachment_id, '_naver_source_image_url', $clean_url );
+            set_post_thumbnail( $post_id, $attachment_id );
+            return (int) $attachment_id;
+        }
+
+        return new WP_Error( 'sideload_failed', 'Sideloading image failed.' );
     }
 
     /**
@@ -520,7 +818,7 @@ class Naver_RSS_Sync_Ultimate {
             return;
         }
 
-        $opt = get_option( $this->option_name ) ?: $this->get_default_options();
+        $opt = wp_parse_args( get_option( $this->option_name, [] ), $this->get_default_options() );
 
         $v = function( $key, $default = '' ) use ( $opt ) {
             return isset( $opt[ $key ] ) ? esc_attr( $opt[ $key ] ) : $default;
@@ -543,6 +841,18 @@ class Naver_RSS_Sync_Ultimate {
                 </h1>
                 <span class="nrsu-header-badge">Console Skeleton v1.0</span>
             </div>
+
+            <?php if ( isset( $_GET['nrsu_sync_status'] ) ) : ?>
+                <?php if ( 'success' === $_GET['nrsu_sync_status'] ) : ?>
+                    <div style="background: rgba(3, 199, 90, 0.1); border-left: 4px solid #03C75A; padding: 15px; margin-bottom: 25px; border-radius: 4px; color: #cbd5e1; font-weight: 500;">
+                        ✅ <b>동기화 성공:</b> 네이버 블로그 글 수집이 정상적으로 완료되었습니다. (새로 추가된 글: <?php echo isset( $_GET['nrsu_sync_count'] ) ? intval( $_GET['nrsu_sync_count'] ) : 0; ?>개)
+                    </div>
+                <?php elseif ( 'error' === $_GET['nrsu_sync_status'] ) : ?>
+                    <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 15px; margin-bottom: 25px; border-radius: 4px; color: #cbd5e1; font-weight: 500;">
+                        ❌ <b>동기화 실패:</b> 오류가 발생했습니다: <?php echo esc_html( urldecode( $_GET['nrsu_sync_msg'] ?? '' ) ); ?>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
 
             <div class="nrsu-grid">
                 <div class="nrsu-main">
@@ -663,6 +973,9 @@ class Naver_RSS_Sync_Ultimate {
      * Render Card 3: Sidebar Actions Card
      */
     private function render_sidebar_panel() {
+        $last_sync_time = get_option( 'naver_rss_sync_ultimate_last_sync' );
+        $last_sync_status = get_option( 'naver_rss_sync_ultimate_last_status' );
+        $is_active = ! empty( $this->options['rss_url'] );
         ?>
         <div class="nrsu-card" style="border-color: rgba(3, 199, 90, 0.4);">
             <h2>
@@ -681,13 +994,25 @@ class Naver_RSS_Sync_Ultimate {
                 ⚡ 수동 작업
             </h2>
             <p style="font-size: 13px; color: #94a3b8; margin-top: 0; line-height: 1.5;">
-                (뼈대 단계) 향후 구현될 RSS 즉시 크롤링 및 워드프레스 DB 포스팅 연동 모듈을 실행합니다.
+                설정된 네이버 RSS 피드를 즉시 크롤링하고 워드프레스 DB 포스팅 연동 모듈을 직접 실행합니다.
             </p>
-            <div class="nrsu-status-pill inactive">
-                <span class="dashicons dashicons-no" style="font-size: 14px; width: 14px; height: 14px;"></span>
-                동기화 모듈 미작동 (뼈대 단계)
+            <div style="margin-bottom: 15px;">
+                <div class="nrsu-status-pill <?php echo $is_active ? '' : 'inactive'; ?>">
+                    <span class="dashicons <?php echo $is_active ? 'dashicons-yes' : 'dashicons-no'; ?>" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span>
+                    <?php echo $is_active ? '동기화 모듈 작동 가능' : 'RSS 주소 미설정'; ?>
+                </div>
+                <?php if ( $last_sync_time ) : ?>
+                    <div style="font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.4;">
+                         <b>최근 실행:</b> <?php echo esc_html( $last_sync_time ); ?><br>
+                         <b>결과:</b> <?php echo esc_html( $last_sync_status ); ?>
+                    </div>
+                <?php endif; ?>
             </div>
-            <button type="button" class="nrsu-btn-action" disabled style="opacity: 0.5; cursor: not-allowed;">즉시 동기화 실행 (비활성)</button>
+            <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>">
+                <input type="hidden" name="action" value="nrsu_run_sync">
+                <?php wp_nonce_field( 'nrsu_run_sync_action', 'nrsu_sync_nonce' ); ?>
+                <button type="submit" class="nrsu-btn-action" <?php echo $is_active ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed;"'; ?>>즉시 동기화 실행</button>
+            </form>
         </div>
         <?php
     }
@@ -695,3 +1020,4 @@ class Naver_RSS_Sync_Ultimate {
 
 // Initialize Singleton
 add_action( 'plugins_loaded', [ 'Naver_RSS_Sync_Ultimate', 'get_instance' ] );
+register_deactivation_hook( __FILE__, [ 'Naver_RSS_Sync_Ultimate', 'deactivate' ] );
