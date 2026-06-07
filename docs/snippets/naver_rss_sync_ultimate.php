@@ -93,6 +93,8 @@ class Naver_RSS_Sync_Ultimate {
             'sync_interval'       => 'twicedaily',
             'post_status'         => 'draft',
             'archive_style'       => 'toss',
+            'category_mapping'    => [],
+            'auto_create_category' => 1,
         ];
     }
 
@@ -179,6 +181,17 @@ class Naver_RSS_Sync_Ultimate {
 
         // Archive Style selection validation
         $output['archive_style'] = ( isset( $input['archive_style'] ) && in_array( $input['archive_style'], [ 'toss', 'magazine' ], true ) ) ? $input['archive_style'] : 'toss';
+
+        // Category mapping validation
+        $output['category_mapping'] = [];
+        if ( isset( $input['category_mapping'] ) && is_array( $input['category_mapping'] ) ) {
+            foreach ( $input['category_mapping'] as $key => $val ) {
+                $output['category_mapping'][ sanitize_text_field( $key ) ] = intval( $val );
+            }
+        }
+
+        // Auto create category validation
+        $output['auto_create_category'] = isset( $input['auto_create_category'] ) ? 1 : 0;
 
         return $output;
     }
@@ -369,12 +382,47 @@ class Naver_RSS_Sync_Ultimate {
                 }
             }
 
+            // Determine WP category
+            $wp_category_id = 0;
+            $naver_category = isset( $item->category ) ? sanitize_text_field( trim( (string) $item->category ) ) : '';
+
+            if ( ! empty( $naver_category ) ) {
+                $mapping = isset( $this->options['category_mapping'] ) ? $this->options['category_mapping'] : [];
+                if ( isset( $mapping[ $naver_category ] ) && intval( $mapping[ $naver_category ] ) > 0 ) {
+                    $wp_category_id = intval( $mapping[ $naver_category ] );
+                } else {
+                    $auto_create = isset( $this->options['auto_create_category'] ) ? intval( $this->options['auto_create_category'] ) : 1;
+                    if ( $auto_create ) {
+                        $term_check = term_exists( $naver_category, 'category' );
+                        if ( $term_check ) {
+                            if ( is_array( $term_check ) ) {
+                                $wp_category_id = intval( $term_check['term_id'] );
+                            } else {
+                                $wp_category_id = intval( $term_check );
+                            }
+                        } else {
+                            $inserted = wp_insert_term( $naver_category, 'category' );
+                            if ( ! is_wp_error( $inserted ) && is_array( $inserted ) && isset( $inserted['term_id'] ) ) {
+                                $wp_category_id = intval( $inserted['term_id'] );
+                            } else {
+                                $wp_category_id = intval( get_option( 'default_category', 1 ) );
+                            }
+                        }
+                    } else {
+                        $wp_category_id = intval( get_option( 'default_category', 1 ) );
+                    }
+                }
+            } else {
+                $wp_category_id = intval( get_option( 'default_category', 1 ) );
+            }
+
             // Prepare post arguments
             $post_arr = [
-                'post_title'   => $title,
-                'post_content' => $content,
-                'post_status'  => $post_status,
-                'post_type'    => $target_post_type,
+                'post_title'    => $title,
+                'post_content'  => $content,
+                'post_status'   => $post_status,
+                'post_type'     => $target_post_type,
+                'post_category' => [ $wp_category_id ],
             ];
 
             if ( ! empty( $post_date ) ) {
@@ -527,136 +575,104 @@ class Naver_RSS_Sync_Ultimate {
         return new WP_Error( 'sideload_failed', 'Sideloading image failed.' );
     }
 
-    /**
-     * Enqueue admin styles in the head section (Separated from render)
-     */
     public function enqueue_admin_styles() {
         $screen = get_current_screen();
         if ( $screen && strpos( $screen->id, 'naver-rss-sync-ultimate' ) !== false ) {
             ?>
             <style>
+                #wpbody {
+                    background-color: #f2f4f6 !important;
+                }
                 .nrsu-dashboard-wrap {
-                    max-width: 1200px;
-                    margin: 30px auto 30px 20px;
-                    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                    color: #e2e8f0;
+                    max-width: 800px;
+                    margin: 40px auto;
+                    padding: 0 20px;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    color: #191f28;
                 }
                 .nrsu-header {
-                    background: linear-gradient(135deg, #03C75A 0%, #028a3e 100%);
-                    padding: 30px 40px;
-                    border-radius: 16px;
-                    box-shadow: 0 10px 25px -5px rgba(3, 199, 90, 0.3);
+                    padding: 20px 0;
                     margin-bottom: 30px;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    position: relative;
-                    overflow: hidden;
-                }
-                .nrsu-header::before {
-                    content: '';
-                    position: absolute;
-                    top: -50%;
-                    right: -20%;
-                    width: 300px;
-                    height: 300px;
-                    background: rgba(255, 255, 255, 0.1);
-                    border-radius: 50%;
-                    pointer-events: none;
+                    border-bottom: 1px solid #e5e8eb;
                 }
                 .nrsu-header h1 {
-                    color: #ffffff;
-                    font-size: 28px;
-                    font-weight: 800;
+                    color: #191f28;
+                    font-size: 26px;
+                    font-weight: 700;
                     margin: 0;
-                    letter-spacing: -0.03em;
                     display: flex;
                     align-items: center;
                     gap: 10px;
                 }
                 .nrsu-header-badge {
-                    background: rgba(255, 255, 255, 0.2);
-                    padding: 4px 12px;
+                    background: #3182f6;
+                    padding: 6px 14px;
                     border-radius: 99px;
                     font-size: 12px;
                     font-weight: 600;
                     color: #ffffff;
-                    text-transform: uppercase;
-                }
-                .nrsu-grid {
-                    display: grid;
-                    grid-template-columns: 2fr 1fr;
-                    gap: 30px;
-                }
-                @media (max-width: 960px) {
-                    .nrsu-grid {
-                        grid-template-columns: 1fr;
-                    }
                 }
                 .nrsu-card {
-                    background: #1e293b;
-                    border: 1px solid #334155;
-                    border-radius: 16px;
+                    background: rgba(255, 255, 255, 0.75);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255, 255, 255, 0.4);
+                    border-radius: 20px;
                     padding: 30px;
-                    margin-bottom: 30px;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-                    transition: transform 0.2s ease, box-shadow 0.2s ease;
-                }
-                .nrsu-card:hover {
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                    margin-bottom: 24px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
                 }
                 .nrsu-card h2 {
-                    color: #f8fafc;
+                    color: #191f28;
                     margin-top: 0;
-                    margin-bottom: 25px;
-                    font-size: 20px;
+                    margin-bottom: 20px;
+                    font-size: 18px;
                     font-weight: 700;
-                    border-bottom: 1px solid #334155;
-                    padding-bottom: 15px;
                     display: flex;
                     align-items: center;
                     gap: 10px;
                 }
                 .nrsu-field {
-                    margin-bottom: 25px;
+                    margin-bottom: 24px;
                 }
                 .nrsu-field label.nrsu-label {
                     display: block;
                     font-weight: 600;
-                    margin-bottom: 10px;
-                    color: #cbd5e1;
+                    margin-bottom: 8px;
+                    color: #333d4b;
                     font-size: 14px;
                 }
                 .nrsu-input-text, .nrsu-select {
                     width: 100%;
-                    background: #0f172a !important;
-                    border: 1px solid #475569 !important;
-                    color: #f8fafc !important;
+                    background: #ffffff !important;
+                    border: 1px solid #e5e8eb !important;
+                    color: #191f28 !important;
                     padding: 12px 16px !important;
-                    border-radius: 8px !important;
-                    font-size: 14px !important;
-                    transition: border-color 0.2s, box-shadow 0.2s;
+                    border-radius: 12px !important;
+                    font-size: 15px !important;
+                    transition: all 0.2s ease;
                     box-shadow: none !important;
                     height: auto !important;
                 }
                 .nrsu-input-text:focus, .nrsu-select:focus {
-                    border-color: #03C75A !important;
-                    box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.2) !important;
+                    border-color: #3182f6 !important;
+                    box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.15) !important;
                     outline: none;
                 }
-                
-                /* Styled Radio Group for CPT/Post Selection */
                 .nrsu-radio-group {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 15px;
-                    margin-top: 10px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    margin-top: 8px;
                 }
                 .nrsu-radio-box {
-                    background: #0f172a;
-                    border: 1px solid #334155;
-                    border-radius: 10px;
-                    padding: 15px 20px;
+                    background: #ffffff;
+                    border: 1px solid #e5e8eb;
+                    border-radius: 12px;
+                    padding: 16px 20px;
                     cursor: pointer;
                     transition: all 0.2s ease;
                     display: flex;
@@ -664,59 +680,59 @@ class Naver_RSS_Sync_Ultimate {
                     gap: 12px;
                 }
                 .nrsu-radio-box:hover {
-                    border-color: #475569;
-                    background: #1e293b;
+                    border-color: #3182f6;
+                    background: #f8f9fa;
                 }
                 .nrsu-radio-box.selected {
-                    border-color: #03C75A;
-                    background: rgba(3, 199, 90, 0.05);
-                    box-shadow: 0 0 0 1px #03C75A;
+                    border-color: #3182f6;
+                    background: rgba(49, 130, 246, 0.03);
                 }
                 .nrsu-radio-box input[type="radio"] {
-                    margin-top: 3px;
-                    accent-color: #03C75A;
+                    margin-top: 4px;
+                    accent-color: #3182f6;
                 }
                 .nrsu-radio-label-title {
-                    font-weight: 700;
-                    color: #f8fafc;
+                    font-weight: 600;
+                    font-size: 15px;
+                    color: #191f28;
                     display: block;
                     margin-bottom: 4px;
                 }
                 .nrsu-radio-label-desc {
-                    font-size: 12px;
-                    color: #94a3b8;
-                    line-height: 1.4;
+                    font-size: 13px;
+                    color: #4e5968;
+                    line-height: 1.5;
                 }
-
-                /* Styled Toggle Switch for Gutenberg Override */
                 .nrsu-switch-container {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    background: #0f172a;
-                    padding: 20px;
-                    border-radius: 10px;
-                    border: 1px solid #334155;
+                    background: #ffffff;
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    border: 1px solid #e5e8eb;
                 }
                 .nrsu-switch-info {
                     max-width: 80%;
                 }
                 .nrsu-switch-title {
-                    font-weight: 700;
-                    color: #f8fafc;
+                    font-weight: 600;
+                    font-size: 15px;
+                    color: #191f28;
                     display: block;
                     margin-bottom: 4px;
                 }
                 .nrsu-switch-desc {
-                    font-size: 12px;
-                    color: #94a3b8;
-                    line-height: 1.4;
+                    font-size: 13px;
+                    color: #4e5968;
+                    line-height: 1.5;
                 }
                 .nrsu-switch {
                     position: relative;
                     display: inline-block;
                     width: 50px;
                     height: 26px;
+                    flex-shrink: 0;
                 }
                 .nrsu-switch input {
                     opacity: 0;
@@ -731,7 +747,7 @@ class Naver_RSS_Sync_Ultimate {
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background-color: #475569;
+                    background-color: #e5e8eb;
                     transition: .4s;
                     border-radius: 34px;
                 }
@@ -745,65 +761,31 @@ class Naver_RSS_Sync_Ultimate {
                     background-color: white;
                     transition: .4s;
                     border-radius: 50%;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 }
                 .nrsu-switch input:checked + .nrsu-slider {
-                    background-color: #03C75A;
-                }
-                .nrsu-switch input:focus + .nrsu-slider {
-                    box-shadow: 0 0 1px #03C75A;
+                    background-color: #3182f6;
                 }
                 .nrsu-switch input:checked + .nrsu-slider:before {
                     transform: translateX(24px);
                 }
-
-                /* General Helper Elements */
-                .nrsu-hint {
-                    display: block;
-                    font-size: 13px;
-                    color: #94a3b8;
-                    margin-top: 10px;
-                    line-height: 1.5;
-                }
                 .nrsu-hint-box {
-                    background: rgba(3, 199, 90, 0.05);
-                    border-left: 4px solid #03C75A;
+                    background: #f2f4f6;
+                    border-left: 4px solid #b0c4de;
                     padding: 15px 20px;
-                    border-radius: 0 8px 8px 0;
+                    border-radius: 0 12px 12px 0;
                     font-size: 13px;
-                    color: #cbd5e1;
+                    color: #4e5968;
                     line-height: 1.6;
                     margin-top: 10px;
                 }
-                
-                /* Buttons and Actions */
                 .nrsu-btn-save {
-                    background: #03C75A !important;
+                    background: #3182f6 !important;
                     border: none !important;
                     color: #ffffff !important;
-                    padding: 14px 28px !important;
-                    border-radius: 8px !important;
+                    padding: 14px 24px !important;
+                    border-radius: 12px !important;
                     font-size: 15px !important;
-                    font-weight: 700 !important;
-                    cursor: pointer !important;
-                    width: 100%;
-                    box-shadow: 0 4px 14px rgba(3, 199, 90, 0.4) !important;
-                    transition: all 0.2s ease !important;
-                    text-align: center;
-                    line-height: 1 !important;
-                    height: auto !important;
-                }
-                .nrsu-btn-save:hover {
-                    background: #02a64b !important;
-                    box-shadow: 0 6px 20px rgba(3, 199, 90, 0.6) !important;
-                    transform: translateY(-1px);
-                }
-                .nrsu-btn-action {
-                    background: #3b82f6 !important;
-                    border: none !important;
-                    color: #ffffff !important;
-                    padding: 12px 20px !important;
-                    border-radius: 8px !important;
-                    font-size: 14px !important;
                     font-weight: 600 !important;
                     cursor: pointer !important;
                     width: 100%;
@@ -811,10 +793,28 @@ class Naver_RSS_Sync_Ultimate {
                     text-align: center;
                     line-height: 1 !important;
                     height: auto !important;
-                    margin-top: 15px;
+                }
+                .nrsu-btn-save:hover {
+                    background: #1b64da !important;
+                }
+                .nrsu-btn-action {
+                    background: #f2f4f6 !important;
+                    border: 1px solid #e5e8eb !important;
+                    color: #4e5968 !important;
+                    padding: 14px 24px !important;
+                    border-radius: 12px !important;
+                    font-size: 15px !important;
+                    font-weight: 600 !important;
+                    cursor: pointer !important;
+                    width: 100%;
+                    transition: all 0.2s ease !important;
+                    text-align: center;
+                    line-height: 1 !important;
+                    height: auto !important;
                 }
                 .nrsu-btn-action:hover {
-                    background: #2563eb !important;
+                    background: #e5e8eb !important;
+                    color: #191f28 !important;
                 }
                 .nrsu-status-pill {
                     display: inline-flex;
@@ -822,14 +822,69 @@ class Naver_RSS_Sync_Ultimate {
                     gap: 6px;
                     font-size: 12px;
                     font-weight: 600;
-                    padding: 4px 10px;
+                    padding: 4px 12px;
                     border-radius: 99px;
-                    background: rgba(3, 199, 90, 0.1);
-                    color: #03C75A;
+                    background: rgba(49, 130, 246, 0.08);
+                    color: #3182f6;
                 }
                 .nrsu-status-pill.inactive {
-                    background: rgba(148, 163, 184, 0.1);
-                    color: #94a3b8;
+                    background: #e5e8eb;
+                    color: #8b95a1;
+                }
+                .nrsu-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 15px;
+                    border: 1px solid #e5e8eb;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    background: #ffffff;
+                }
+                .nrsu-table th {
+                    background: #f8f9fa;
+                    color: #4e5968;
+                    font-weight: 600;
+                    font-size: 13px;
+                    padding: 12px 16px;
+                    text-align: left;
+                    border-bottom: 1px solid #e5e8eb;
+                }
+                .nrsu-table td {
+                    padding: 12px 16px;
+                    font-size: 14px;
+                    color: #191f28;
+                    border-bottom: 1px solid #e5e8eb;
+                }
+                .nrsu-table tr:last-child td {
+                    border-bottom: none;
+                }
+                .nrsu-mapping-notice {
+                    background: #f8f9fa;
+                    border: 1px solid #e5e8eb;
+                    border-radius: 12px;
+                    padding: 15px 20px;
+                    font-size: 14px;
+                    color: #4e5968;
+                    text-align: center;
+                    margin-top: 15px;
+                }
+                .nrsu-alert {
+                    background: #ffffff;
+                    border-left: 4px solid #3182f6;
+                    padding: 16px 20px;
+                    margin-bottom: 24px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+                    color: #333d4b;
+                    font-size: 14px;
+                }
+                .nrsu-alert-success {
+                    border-left-color: #2ea65a;
+                    background: rgba(46, 166, 90, 0.02);
+                }
+                .nrsu-alert-error {
+                    border-left-color: #f04438;
+                    background: rgba(240, 68, 56, 0.02);
                 }
             </style>
             <?php
@@ -849,6 +904,12 @@ class Naver_RSS_Sync_Ultimate {
                     $('.nrsu-radio-group input[type="radio"]').on('change', function() {
                         $(this).closest('.nrsu-radio-group').find('.nrsu-radio-box').removeClass('selected');
                         $(this).closest('.nrsu-radio-box').addClass('selected');
+                    });
+
+                    // Trigger manual sync form submission
+                    $('#nrsu-manual-sync-btn').on('click', function(e) {
+                        e.preventDefault();
+                        $('#nrsu-manual-sync-form').submit();
                     });
                 });
             </script>
@@ -882,42 +943,45 @@ class Naver_RSS_Sync_Ultimate {
         <div class="wrap nrsu-dashboard-wrap">
             <div class="nrsu-header">
                 <h1>
-                    <span class="dashicons dashicons-rss" style="font-size: 28px; width: 28px; height: 28px;"></span>
+                    <span class="dashicons dashicons-rss" style="font-size: 28px; width: 28px; height: 28px; color: #3182f6;"></span>
                     Naver RSS Sync Ultimate
                 </h1>
-                <span class="nrsu-header-badge">Console Skeleton v1.0</span>
+                <span class="nrsu-header-badge">Toss Style v2.0</span>
             </div>
 
             <?php if ( isset( $_GET['nrsu_sync_status'] ) ) : ?>
                 <?php if ( 'success' === $_GET['nrsu_sync_status'] ) : ?>
-                    <div style="background: rgba(3, 199, 90, 0.1); border-left: 4px solid #03C75A; padding: 15px; margin-bottom: 25px; border-radius: 4px; color: #cbd5e1; font-weight: 500;">
+                    <div class="nrsu-alert nrsu-alert-success">
                         ✅ <b>동기화 성공:</b> 네이버 블로그 글 수집이 정상적으로 완료되었습니다. (새로 추가된 글: <?php echo isset( $_GET['nrsu_sync_count'] ) ? intval( $_GET['nrsu_sync_count'] ) : 0; ?>개)
                     </div>
                 <?php elseif ( 'error' === $_GET['nrsu_sync_status'] ) : ?>
-                    <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 15px; margin-bottom: 25px; border-radius: 4px; color: #cbd5e1; font-weight: 500;">
+                    <div class="nrsu-alert nrsu-alert-error">
                         ❌ <b>동기화 실패:</b> 오류가 발생했습니다: <?php echo esc_html( urldecode( $_GET['nrsu_sync_msg'] ?? '' ) ); ?>
                     </div>
                 <?php endif; ?>
             <?php endif; ?>
 
-            <div class="nrsu-grid">
-                <div class="nrsu-main">
-                    <form id="nrsu-settings-form" method="post" action="options.php">
-                        <?php settings_fields( 'naver_rss_sync_ultimate_group' ); ?>
-                        
-                        <!-- Card 1: Data Source & Destination -->
-                        <?php $this->render_basic_settings( $v, $c ); ?>
+            <form id="nrsu-settings-form" method="post" action="options.php">
+                <?php settings_fields( 'naver_rss_sync_ultimate_group' ); ?>
+                
+                <!-- Card 1: Data Source & Destination -->
+                <?php $this->render_basic_settings( $v, $c ); ?>
 
-                        <!-- Card 2: Compatibility & Editor Override -->
-                        <?php $this->render_compatibility_settings( $v, $c, $s ); ?>
-                    </form>
-                </div>
+                <!-- Card 2: Category Mapping Settings -->
+                <?php $this->render_category_settings( $opt ); ?>
 
-                <!-- Sidebar for save & immediate actions -->
-                <div class="nrsu-sidebar">
-                    <?php $this->render_sidebar_panel(); ?>
-                </div>
-            </div>
+                <!-- Card 3: Compatibility & Editor Override -->
+                <?php $this->render_compatibility_settings( $v, $c, $s ); ?>
+                
+                <!-- Card 4: Action/Save Panel -->
+                <?php $this->render_actions_panel(); ?>
+            </form>
+
+            <!-- Hidden form for manual sync to avoid form nestings -->
+            <form id="nrsu-manual-sync-form" method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display: none;">
+                <input type="hidden" name="action" value="nrsu_run_sync">
+                <?php wp_nonce_field( 'nrsu_run_sync_action', 'nrsu_sync_nonce' ); ?>
+            </form>
         </div>
         <?php
     }
@@ -929,7 +993,7 @@ class Naver_RSS_Sync_Ultimate {
         ?>
         <div class="nrsu-card">
             <h2>
-                <span class="dashicons dashicons-database-add"></span>
+                <span class="dashicons dashicons-database-add" style="color: #3182f6;"></span>
                 1. 📡 데이터 소스 및 발행 대상 설정
             </h2>
             
@@ -969,14 +1033,132 @@ class Naver_RSS_Sync_Ultimate {
     }
 
     /**
-     * Render Card 2: Compatibility Settings
+     * Render Card 2: Category Mapping Settings
+     */
+    private function render_category_settings( $opt ) {
+        $unique_naver_categories = [];
+        $rss_url = $opt['rss_url'] ?? '';
+        $fetch_error_msg = '';
+
+        if ( ! empty( $rss_url ) && filter_var( $rss_url, FILTER_VALIDATE_URL ) ) {
+            $cache_key = 'nrsu_rss_categories_' . md5( $rss_url );
+            $cached_categories = get_transient( $cache_key );
+            
+            if ( false !== $cached_categories && is_array( $cached_categories ) ) {
+                $unique_naver_categories = $cached_categories;
+            } else {
+                libxml_use_internal_errors( true );
+                $response = wp_remote_get( $rss_url, [ 'timeout' => 5 ] );
+                if ( ! is_wp_error( $response ) ) {
+                    $body = wp_remote_retrieve_body( $response );
+                    if ( ! empty( $body ) ) {
+                        $xml = simplexml_load_string( $body, 'SimpleXMLElement', LIBXML_NOCDATA );
+                        if ( $xml && isset( $xml->channel->item ) ) {
+                            foreach ( $xml->channel->item as $item ) {
+                                if ( isset( $item->category ) ) {
+                                    $cat_name = sanitize_text_field( trim( (string) $item->category ) );
+                                    if ( ! empty( $cat_name ) && ! in_array( $cat_name, $unique_naver_categories, true ) ) {
+                                        $unique_naver_categories[] = $cat_name;
+                                    }
+                                }
+                            }
+                            set_transient( $cache_key, $unique_naver_categories, 5 * MINUTE_IN_SECONDS );
+                        } else {
+                            $fetch_error_msg = 'RSS XML을 파싱할 수 없습니다.';
+                        }
+                    } else {
+                        $fetch_error_msg = 'RSS 피드 응답이 비어있습니다.';
+                    }
+                } else {
+                    $fetch_error_msg = 'RSS 피드를 가져오는 데 실패했습니다: ' . $response->get_error_message();
+                }
+                libxml_clear_errors();
+            }
+        } else {
+            $fetch_error_msg = '유효한 RSS 주소를 입력하고 저장해 주세요.';
+        }
+
+        $wp_categories = get_categories( [ 'hide_empty' => 0 ] );
+        $auto_create = isset( $opt['auto_create_category'] ) ? intval( $opt['auto_create_category'] ) : 1;
+        $mapping = isset( $opt['category_mapping'] ) && is_array( $opt['category_mapping'] ) ? $opt['category_mapping'] : [];
+        ?>
+        <div class="nrsu-card">
+            <h2>
+                <span class="dashicons dashicons-category" style="color: #3182f6;"></span>
+                2. 🗂️ 카테고리 매핑 설정 (Category Mapping)
+            </h2>
+            <p style="font-size: 13px; color: #4e5968; margin-top: 0; line-height: 1.5; margin-bottom: 20px;">
+                네이버 블로그 카테고리를 워드프레스 카테고리에 1:1로 매핑합니다.
+            </p>
+
+            <div class="nrsu-field">
+                <div class="nrsu-switch-container">
+                    <div class="nrsu-switch-info">
+                        <span class="nrsu-switch-title">미매핑 카테고리 자동 생성</span>
+                        <span class="nrsu-switch-desc">매핑 정보가 없거나 미설정된 네이버 카테고리가 수집될 때, 해당 이름의 워드프레스 카테고리를 자동으로 생성하고 글을 분류합니다. 비활성화 시 기본 카테고리로 분류됩니다.</span>
+                    </div>
+                    <label class="nrsu-switch">
+                        <input type="checkbox" name="naver_rss_sync_ultimate_settings[auto_create_category]" value="1" <?php checked( 1, $auto_create ); ?>>
+                        <span class="nrsu-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="nrsu-field">
+                <label class="nrsu-label">카테고리 개별 매핑 테이블</label>
+                <?php if ( ! empty( $fetch_error_msg ) ) : ?>
+                    <div class="nrsu-mapping-notice">
+                        ⚠️ <?php echo esc_html( $fetch_error_msg ); ?>
+                    </div>
+                <?php elseif ( empty( $unique_naver_categories ) ) : ?>
+                    <div class="nrsu-mapping-notice">
+                        최근 RSS 피드 아이템에 카테고리 정보가 존재하지 않습니다.
+                    </div>
+                <?php else : ?>
+                    <table class="nrsu-table">
+                         <thead>
+                             <tr>
+                                 <th>네이버 블로그 카테고리</th>
+                                 <th>워드프레스 분류 지정</th>
+                             </tr>
+                         </thead>
+                         <tbody>
+                             <?php foreach ( $unique_naver_categories as $naver_cat ) : ?>
+                                 <?php
+                                 $selected_val = isset( $mapping[ $naver_cat ] ) ? intval( $mapping[ $naver_cat ] ) : 0;
+                                 $escaped_key = esc_attr( $naver_cat );
+                                 ?>
+                                 <tr>
+                                     <td style="font-weight: 500;"><?php echo esc_html( $naver_cat ); ?></td>
+                                     <td>
+                                         <select class="nrsu-select" name="naver_rss_sync_ultimate_settings[category_mapping][<?php echo $escaped_key; ?>]" style="padding: 8px 12px !important; font-size: 13px !important; border-radius: 8px !important;">
+                                             <option value="0" <?php selected( 0, $selected_val ); ?>>자동 생성 또는 기본값 적용</option>
+                                             <?php foreach ( $wp_categories as $wp_cat ) : ?>
+                                                 <option value="<?php echo intval( $wp_cat->term_id ); ?>" <?php selected( $wp_cat->term_id, $selected_val ); ?>>
+                                                     <?php echo esc_html( $wp_cat->name ); ?>
+                                                 </option>
+                                             <?php endforeach; ?>
+                                         </select>
+                                     </td>
+                                 </tr>
+                             <?php endforeach; ?>
+                         </tbody>
+                     </table>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render Card 3: Compatibility Settings
      */
     private function render_compatibility_settings( $v, $c, $s ) {
         ?>
         <div class="nrsu-card">
             <h2>
-                <span class="dashicons dashicons-admin-settings"></span>
-                2. ⚙️ 호환성 및 에디터 강제 제어
+                <span class="dashicons dashicons-admin-settings" style="color: #3182f6;"></span>
+                3. ⚙️ 호환성 및 에디터 강제 제어
             </h2>
 
             <div class="nrsu-field">
@@ -1039,49 +1221,42 @@ class Naver_RSS_Sync_Ultimate {
     }
 
     /**
-     * Render Card 3: Sidebar Actions Card
+     * Render Card 4: Action/Save Panel
      */
-    private function render_sidebar_panel() {
+    private function render_actions_panel() {
         $last_sync_time = get_option( 'naver_rss_sync_ultimate_last_sync' );
         $last_sync_status = get_option( 'naver_rss_sync_ultimate_last_status' );
         $is_active = ! empty( $this->options['rss_url'] );
         ?>
-        <div class="nrsu-card" style="border-color: rgba(3, 199, 90, 0.4);">
+        <div class="nrsu-card" style="border-top: 4px solid #3182f6;">
             <h2>
-                <span class="dashicons dashicons-yes-alt" style="color: #03C75A;"></span>
-                💾 구성 저장
+                <span class="dashicons dashicons-saved" style="color: #3182f6;"></span>
+                4. 💾 변경사항 저장 및 즉시 연동
             </h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-top: 0; line-height: 1.5;">
-                입력된 네이버 RSS 피드 주소 및 발행 타입, 편집기 호환성 설정을 즉시 저장하고 코어에 적용합니다.
+            <p style="font-size: 13px; color: #4e5968; margin-top: 0; line-height: 1.5; margin-bottom: 20px;">
+                설정된 정보들을 즉시 데이터베이스에 저장하거나 네이버 RSS 데이터 수동 동기화를 바로 실행합니다.
             </p>
-            <button type="submit" form="nrsu-settings-form" class="nrsu-btn-save">설정 저장 및 적용</button>
-        </div>
-
-        <div class="nrsu-card" style="border-color: #334155;">
-            <h2>
-                <span class="dashicons dashicons-update" style="color: #3b82f6;"></span>
-                ⚡ 수동 작업
-            </h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-top: 0; line-height: 1.5;">
-                설정된 네이버 RSS 피드를 즉시 크롤링하고 워드프레스 DB 포스팅 연동 모듈을 직접 실행합니다.
-            </p>
-            <div style="margin-bottom: 15px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <button type="submit" class="nrsu-btn-save">설정 저장 및 적용</button>
+                </div>
+                <div>
+                    <button type="button" id="nrsu-manual-sync-btn" class="nrsu-btn-action" <?php echo $is_active ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed;"'; ?>>즉시 동기화 실행</button>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
                 <div class="nrsu-status-pill <?php echo $is_active ? '' : 'inactive'; ?>">
                     <span class="dashicons <?php echo $is_active ? 'dashicons-yes' : 'dashicons-no'; ?>" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span>
                     <?php echo $is_active ? '동기화 모듈 작동 가능' : 'RSS 주소 미설정'; ?>
                 </div>
                 <?php if ( $last_sync_time ) : ?>
-                    <div style="font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.4;">
+                    <div style="font-size: 12px; color: #4e5968; margin-top: 10px; line-height: 1.4;">
                          <b>최근 실행:</b> <?php echo esc_html( $last_sync_time ); ?><br>
                          <b>결과:</b> <?php echo esc_html( $last_sync_status ); ?>
                     </div>
                 <?php endif; ?>
             </div>
-            <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>">
-                <input type="hidden" name="action" value="nrsu_run_sync">
-                <?php wp_nonce_field( 'nrsu_run_sync_action', 'nrsu_sync_nonce' ); ?>
-                <button type="submit" class="nrsu-btn-action" <?php echo $is_active ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed;"'; ?>>즉시 동기화 실행</button>
-            </form>
         </div>
         <?php
     }

@@ -11,6 +11,224 @@ $GLOBALS['wp_shortcodes'] = [];
 $GLOBALS['mock_posts'] = [];
 $GLOBALS['current_post_id'] = 0;
 $GLOBALS['is_singular_mock'] = false;
+$GLOBALS['wp_transients'] = [];
+$GLOBALS['inserted_posts'] = [];
+$GLOBALS['wp_terms'] = [];
+$GLOBALS['mock_rss_body'] = '';
+
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+    define( 'MINUTE_IN_SECONDS', 60 );
+}
+
+if ( ! class_exists( 'WP_Error' ) ) {
+    class WP_Error {
+        public $code;
+        public $message;
+        public function __construct( $code = '', $message = '' ) {
+            $this->code = $code;
+            $this->message = $message;
+        }
+        public function get_error_message() {
+            return $this->message;
+        }
+    }
+}
+
+if ( ! function_exists( 'is_wp_error' ) ) {
+    function is_wp_error( $thing ) {
+        return ( $thing instanceof WP_Error );
+    }
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+    function sanitize_text_field( $str ) {
+        return trim( strip_tags( $str ) );
+    }
+}
+
+if ( ! function_exists( 'esc_url_raw' ) ) {
+    function esc_url_raw( $url ) {
+        return $url;
+    }
+}
+
+if ( ! function_exists( 'wp_kses_post' ) ) {
+    function wp_kses_post( $content ) {
+        return $content;
+    }
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+    function delete_transient( $transient ) {
+        unset( $GLOBALS['wp_transients'][$transient] );
+        return true;
+    }
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+    function set_transient( $transient, $value, $expiration = 0 ) {
+        $GLOBALS['wp_transients'][$transient] = $value;
+        return true;
+    }
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+    function get_transient( $transient ) {
+        return isset( $GLOBALS['wp_transients'][$transient] ) ? $GLOBALS['wp_transients'][$transient] : false;
+    }
+}
+
+if ( ! function_exists( 'wp_insert_post' ) ) {
+    function wp_insert_post( $postarr, $wp_error = false ) {
+        $GLOBALS['inserted_posts'][] = $postarr;
+        $id = count( $GLOBALS['inserted_posts'] );
+        return $id;
+    }
+}
+
+if ( ! function_exists( 'update_post_meta' ) ) {
+    function update_post_meta( $post_id, $meta_key, $meta_value, $prev_value = '' ) {
+        $GLOBALS['wp_meta'][$post_id][$meta_key] = $meta_value;
+        return true;
+    }
+}
+
+if ( ! function_exists( 'term_exists' ) ) {
+    function term_exists( $term, $taxonomy = '', $parent = null ) {
+        if ( isset( $GLOBALS['wp_terms'][$taxonomy] ) ) {
+            foreach ( $GLOBALS['wp_terms'][$taxonomy] as $id => $name ) {
+                if ( $name === $term ) {
+                    return $id;
+                }
+            }
+        }
+        return null;
+    }
+}
+
+if ( ! function_exists( 'wp_insert_term' ) ) {
+    function wp_insert_term( $term, $taxonomy, $args = [] ) {
+        if ( ! isset( $GLOBALS['wp_terms'][$taxonomy] ) ) {
+            $GLOBALS['wp_terms'][$taxonomy] = [];
+        }
+        $exists = term_exists( $term, $taxonomy );
+        if ( $exists ) {
+            return new WP_Error( 'term_exists', 'Term already exists' );
+        }
+        $id = count( $GLOBALS['wp_terms'][$taxonomy] ) + 100;
+        $GLOBALS['wp_terms'][$taxonomy][$id] = $term;
+        return [ 'term_id' => $id, 'term_taxonomy_id' => $id ];
+    }
+}
+
+if ( ! function_exists( 'get_categories' ) ) {
+    function get_categories( $args = [] ) {
+        $cats = [];
+        $terms = isset( $GLOBALS['wp_terms']['category'] ) ? $GLOBALS['wp_terms']['category'] : [];
+        foreach ( $terms as $id => $name ) {
+            $cats[] = (object)[
+                'term_id' => $id,
+                'name'    => $name,
+                'slug'    => sanitize_title( $name ),
+            ];
+        }
+        return $cats;
+    }
+}
+
+if ( ! function_exists( 'sanitize_title' ) ) {
+    function sanitize_title( $title ) {
+        return strtolower( str_replace( ' ', '-', $title ) );
+    }
+}
+
+if ( ! function_exists( 'wp_remote_get' ) ) {
+    function wp_remote_get( $url, $args = [] ) {
+        if ( ! empty( $GLOBALS['mock_rss_body'] ) ) {
+            return [
+                'body'     => $GLOBALS['mock_rss_body'],
+                'response' => [ 'code' => 200 ],
+            ];
+        }
+        if ( strpos( $url, 'mock-rss' ) !== false || strpos( $url, 'naver' ) !== false ) {
+            $body = file_get_contents( __DIR__ . '/mock-rss.xml' );
+            return [
+                'body'     => $body,
+                'response' => [ 'code' => 200 ],
+            ];
+        }
+        return new WP_Error( 'http_request_failed', 'Fetch failed' );
+    }
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+    function wp_remote_retrieve_body( $response ) {
+        if ( is_wp_error( $response ) ) {
+            return '';
+        }
+        return isset( $response['body'] ) ? $response['body'] : '';
+    }
+}
+
+if ( ! function_exists( 'get_post_thumbnail_id' ) ) {
+    function get_post_thumbnail_id( $post_id ) {
+        return 0;
+    }
+}
+
+if ( ! function_exists( 'download_url' ) ) {
+    function download_url( $url, $timeout = 300 ) {
+        return new WP_Error( 'download_failed', 'Mock download failure' );
+    }
+}
+
+if ( ! isset( $GLOBALS['wpdb'] ) ) {
+    class Mock_WPDB {
+        public $postmeta = 'wp_postmeta';
+        public $prepare_calls = [];
+        public $get_var_calls = [];
+
+        public function prepare( $query, ...$args ) {
+            $this->prepare_calls[] = [ 'query' => $query, 'args' => $args ];
+            foreach ( $args as $arg ) {
+                $query = preg_replace( '/%[sd]/', "'" . esc_sql( $arg ) . "'", $query, 1 );
+            }
+            return $query;
+        }
+
+        public function get_var( $query ) {
+            $this->get_var_calls[] = $query;
+            if ( strpos( $query, '_naver_guid' ) !== false ) {
+                if ( preg_match( "/meta_value = '([^']+)'/", $query, $matches ) ) {
+                    $guid = $matches[1];
+                    foreach ( $GLOBALS['wp_meta'] as $post_id => $metas ) {
+                        if ( isset( $metas['_naver_guid'] ) && $metas['_naver_guid'] === $guid ) {
+                            return $post_id;
+                        }
+                    }
+                }
+            }
+            if ( strpos( $query, '_naver_source_image_url' ) !== false ) {
+                if ( preg_match( "/meta_value = '([^']+)'/", $query, $matches ) ) {
+                    $img_url = $matches[1];
+                    foreach ( $GLOBALS['wp_meta'] as $post_id => $metas ) {
+                        if ( isset( $metas['_naver_source_image_url'] ) && $metas['_naver_source_image_url'] === $img_url ) {
+                            return $post_id;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+    }
+    $GLOBALS['wpdb'] = new Mock_WPDB();
+}
+
+if ( ! function_exists( 'esc_sql' ) ) {
+    function esc_sql( $data ) {
+        return addslashes( $data );
+    }
+}
 
 if ( ! function_exists( 'add_action' ) ) {
     function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
@@ -41,6 +259,19 @@ if ( ! function_exists( 'register_deactivation_hook' ) ) {
 if ( ! function_exists( 'get_option' ) ) {
     function get_option( $option, $default = false ) {
         return isset( $GLOBALS['wp_options'][$option] ) ? $GLOBALS['wp_options'][$option] : $default;
+    }
+}
+
+if ( ! function_exists( 'update_option' ) ) {
+    function update_option( $option, $value, $autoload = null ) {
+        $GLOBALS['wp_options'][$option] = $value;
+        return true;
+    }
+}
+
+if ( ! function_exists( 'current_time' ) ) {
+    function current_time( $type, $gmt = 0 ) {
+        return '2026-06-08 12:00:00';
     }
 }
 
@@ -419,8 +650,127 @@ function test_shortcode_rendering_engine() {
     echo "PASS: Shortcode Registration and Layout Rendering Engine Test\n";
 }
 
+function test_category_mapping_and_auto_create() {
+    $instance = Naver_RSS_Sync_Ultimate::get_instance();
+
+    // Helper to generate RSS XML with a specific category and guid
+    $get_rss_xml = function( $category, $guid ) {
+        return '<?xml version="1.0" encoding="utf-8" ?>
+        <rss version="2.0">
+          <channel>
+            <title>Test Blog</title>
+            <link>https://blog.naver.com/test</link>
+            <item>
+              <title>Test Post</title>
+              <link>' . $guid . '</link>
+              <description><![CDATA[Some content]]></description>
+              <category>' . $category . '</category>
+              <pubDate>Sun, 07 Jun 2026 12:00:00 +0900</pubDate>
+              <guid>' . $guid . '</guid>
+            </item>
+          </channel>
+        </rss>';
+    };
+
+    // Initialize/Reset Globals
+    $GLOBALS['wp_transients'] = [];
+    $GLOBALS['inserted_posts'] = [];
+    $GLOBALS['wp_terms'] = [];
+    $GLOBALS['wp_meta'] = [];
+    $GLOBALS['wp_options'] = [];
+
+    // Pre-populate some options
+    $GLOBALS['wp_options']['naver_rss_sync_ultimate_settings'] = [
+        'rss_url' => 'https://blog.naver.com/test/rss',
+        'post_type_selection' => 'naver_blog',
+        'post_status' => 'publish',
+        'category_mapping' => [
+            'IT/Tech' => 42, // Map "IT/Tech" to WP Category ID 42
+        ],
+        'auto_create_category' => 1,
+    ];
+    $GLOBALS['wp_options']['default_category'] = 1;
+
+    // Reload options in instance using Reflection
+    $ref = new ReflectionClass( 'Naver_RSS_Sync_Ultimate' );
+    $prop = $ref->getProperty( 'options' );
+    $prop->setValue( $instance, get_option( 'naver_rss_sync_ultimate_settings', [] ) );
+
+    // ----------------------------------------------------
+    // Case 1: Mapped Category ("IT/Tech" -> 42)
+    // ----------------------------------------------------
+    $GLOBALS['mock_rss_body'] = $get_rss_xml( 'IT/Tech', 'https://blog.naver.com/test/mapped_post' );
+    $GLOBALS['inserted_posts'] = [];
+    $instance->run_sync();
+    
+    assert( count( $GLOBALS['inserted_posts'] ) === 1, "Should insert 1 post" );
+    $inserted = $GLOBALS['inserted_posts'][0];
+    assert( isset( $inserted['post_category'] ), "Post should have post_category" );
+    assert( $inserted['post_category'][0] === 42, "Post category should be 42 (mapped)" );
+
+    // ----------------------------------------------------
+    // Case 2: Auto-create category enabled, category does not exist ("음식")
+    // ----------------------------------------------------
+    $GLOBALS['mock_rss_body'] = $get_rss_xml( '음식', 'https://blog.naver.com/test/autocreate_post' );
+    $GLOBALS['inserted_posts'] = [];
+    $GLOBALS['wp_terms'] = []; // reset terms
+    
+    $instance->run_sync();
+    
+    // Check if term "음식" was inserted
+    assert( isset( $GLOBALS['wp_terms']['category'] ), "Should have inserted a category" );
+    $created_cats = $GLOBALS['wp_terms']['category'];
+    $food_cat_id = array_search( '음식', $created_cats );
+    assert( $food_cat_id !== false, "Category '음식' should have been created" );
+    
+    assert( count( $GLOBALS['inserted_posts'] ) === 1, "Should insert 1 post" );
+    $inserted = $GLOBALS['inserted_posts'][0];
+    assert( $inserted['post_category'][0] === $food_cat_id, "Post category should be the newly created category ID" );
+
+    // ----------------------------------------------------
+    // Case 3: Auto-create category enabled, category already exists ("음식")
+    // ----------------------------------------------------
+    // Category "음식" already exists with the same ID from Case 2
+    $GLOBALS['mock_rss_body'] = $get_rss_xml( '음식', 'https://blog.naver.com/test/exists_post' );
+    $GLOBALS['inserted_posts'] = [];
+    $terms_before = count( $GLOBALS['wp_terms']['category'] );
+    
+    $instance->run_sync();
+    
+    $terms_after = count( $GLOBALS['wp_terms']['category'] );
+    assert( $terms_before === $terms_after, "Should not create a new category if it already exists" );
+    
+    assert( count( $GLOBALS['inserted_posts'] ) === 1, "Should insert 1 post" );
+    $inserted = $GLOBALS['inserted_posts'][0];
+    assert( $inserted['post_category'][0] === $food_cat_id, "Post category should be the existing category ID" );
+
+    // ----------------------------------------------------
+    // Case 4: Auto-create category disabled, category does not exist ("스포츠")
+    // ----------------------------------------------------
+    $GLOBALS['wp_options']['naver_rss_sync_ultimate_settings']['auto_create_category'] = 0;
+    $ref = new ReflectionClass( 'Naver_RSS_Sync_Ultimate' );
+    $prop = $ref->getProperty( 'options' );
+    $prop->setValue( $instance, get_option( 'naver_rss_sync_ultimate_settings', [] ) );
+    
+    $GLOBALS['mock_rss_body'] = $get_rss_xml( '스포츠', 'https://blog.naver.com/test/disabled_post' );
+    $GLOBALS['inserted_posts'] = [];
+    
+    $instance->run_sync();
+    
+    // Check "스포츠" was NOT created
+    $created_cats = isset( $GLOBALS['wp_terms']['category'] ) ? $GLOBALS['wp_terms']['category'] : [];
+    assert( ! in_array( '스포츠', $created_cats, true ), "Category '스포츠' should NOT be created when auto-create is disabled" );
+    
+    assert( count( $GLOBALS['inserted_posts'] ) === 1, "Should insert 1 post" );
+    $inserted = $GLOBALS['inserted_posts'][0];
+    assert( $inserted['post_category'][0] === 1, "Post category should fallback to default category (1)" );
+
+    echo "PASS: Category Mapping and Auto Create Test\n";
+}
+
 // Execute all tests
 test_image_url_cleansing();
 test_rss_xml_parsing();
 test_seo_and_canonical_logic();
 test_shortcode_rendering_engine();
+test_category_mapping_and_auto_create();
