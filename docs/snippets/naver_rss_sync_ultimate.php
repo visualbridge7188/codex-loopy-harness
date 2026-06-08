@@ -61,6 +61,7 @@ class Naver_RSS_Sync_Ultimate {
             add_action( 'admin_head', [ $this, 'enqueue_admin_styles' ] );
             add_action( 'admin_footer', [ $this, 'print_admin_scripts' ] );
             add_action( 'admin_post_nrsu_run_sync', [ $this, 'handle_manual_sync' ] );
+            add_action( 'wp_ajax_nrsu_fetch_categories', [ $this, 'ajax_fetch_categories' ] );
         }
 
         // 3. Classic Editor Override Filter (Selective Gutenberg Block Editor bypass)
@@ -292,6 +293,110 @@ class Naver_RSS_Sync_Ultimate {
 
         wp_safe_redirect( $redirect_url );
         exit;
+    }
+
+    /**
+     * AJAX fetch categories from Naver RSS feed URL
+     */
+    public function ajax_fetch_categories() {
+        // Nonce check
+        if ( ! check_ajax_referer( 'nrsu_run_sync_action', 'security', false ) ) {
+            wp_send_json_error( [ 'message' => '보안 검증에 실패했습니다. (Invalid nonce)' ] );
+        }
+
+        // Capability check
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => '권한이 없습니다.' ] );
+        }
+
+        // Retrieve and validate rss_url
+        $rss_url = isset( $_POST['rss_url'] ) ? esc_url_raw( trim( $_POST['rss_url'] ) ) : '';
+        if ( empty( $rss_url ) || ! filter_var( $rss_url, FILTER_VALIDATE_URL ) ) {
+            wp_send_json_error( [ 'message' => '유효하지 않은 RSS URL입니다.' ] );
+        }
+
+        // Fetch RSS feed
+        $response = wp_remote_get( $rss_url, [ 'timeout' => 5 ] );
+        if ( is_wp_error( $response ) ) {
+            wp_send_json_error( [ 'message' => 'RSS 피드를 가져오는 데 실패했습니다: ' . $response->get_error_message() ] );
+        }
+
+        $body = wp_remote_retrieve_body( $response );
+        if ( empty( $body ) ) {
+            wp_send_json_error( [ 'message' => 'RSS 피드 응답이 비어있습니다.' ] );
+        }
+
+        $xml = $this->parse_rss_xml( $body );
+        if ( ! $xml ) {
+            wp_send_json_error( [ 'message' => 'RSS XML을 파싱할 수 없습니다.' ] );
+        }
+
+        $unique_naver_categories = [];
+        if ( isset( $xml->channel->item ) ) {
+            foreach ( $xml->channel->item as $item ) {
+                if ( isset( $item->category ) ) {
+                    $cat_name = sanitize_text_field( trim( (string) $item->category ) );
+                    if ( ! empty( $cat_name ) && ! in_array( $cat_name, $unique_naver_categories, true ) ) {
+                        $unique_naver_categories[] = $cat_name;
+                    }
+                }
+            }
+        }
+
+        // Retrieve WP categories and existing mapping config
+        $wp_categories = get_categories( [ 'hide_empty' => 0 ] );
+        $opt = wp_parse_args( get_option( $this->option_name, [] ), $this->get_default_options() );
+        $mapping = isset( $opt['category_mapping'] ) && is_array( $opt['category_mapping'] ) ? $opt['category_mapping'] : [];
+
+        // Update transient cache
+        if ( ! empty( $unique_naver_categories ) ) {
+            $cache_key = 'nrsu_rss_categories_' . md5( $rss_url );
+            set_transient( $cache_key, $unique_naver_categories, 5 * MINUTE_IN_SECONDS );
+        }
+
+        ob_start();
+        if ( empty( $unique_naver_categories ) ) {
+            ?>
+            <div class="nrsu-mapping-notice">
+                최근 RSS 피드 아이템에 카테고리 정보가 존재하지 않습니다.
+            </div>
+            <?php
+        } else {
+            ?>
+            <table class="nrsu-table">
+                 <thead>
+                     <tr>
+                         <th>네이버 블로그 카테고리</th>
+                         <th>워드프레스 분류 지정</th>
+                     </tr>
+                 </thead>
+                 <tbody>
+                     <?php foreach ( $unique_naver_categories as $naver_cat ) : ?>
+                         <?php
+                         $selected_val = isset( $mapping[ $naver_cat ] ) ? intval( $mapping[ $naver_cat ] ) : 0;
+                         $escaped_key = esc_attr( $naver_cat );
+                         ?>
+                         <tr>
+                             <td style="font-weight: 500;"><?php echo esc_html( $naver_cat ); ?></td>
+                             <td>
+                                 <select class="nrsu-select" name="naver_rss_sync_ultimate_settings[category_mapping][<?php echo $escaped_key; ?>]" style="padding: 8px 12px !important; font-size: 13px !important; border-radius: 8px !important;">
+                                     <option value="0" <?php selected( 0, $selected_val ); ?>>자동 생성 또는 기본값 적용</option>
+                                     <?php foreach ( $wp_categories as $wp_cat ) : ?>
+                                         <option value="<?php echo intval( $wp_cat->term_id ); ?>" <?php selected( $wp_cat->term_id, $selected_val ); ?>>
+                                             <?php echo esc_html( $wp_cat->name ); ?>
+                                         </option>
+                                     <?php endforeach; ?>
+                                 </select>
+                             </td>
+                         </tr>
+                     <?php endforeach; ?>
+                 </tbody>
+             </table>
+            <?php
+        }
+        $html = ob_get_clean();
+
+        wp_send_json_success( [ 'html' => $html ] );
     }
 
     /**
@@ -618,11 +723,26 @@ class Naver_RSS_Sync_Ultimate {
                     background-color: #f2f4f6 !important;
                 }
                 .nrsu-dashboard-wrap {
-                    max-width: 800px;
+                    max-width: 1200px;
                     margin: 40px auto;
                     padding: 0 20px;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     color: #191f28;
+                }
+                .nrsu-grid {
+                    display: grid;
+                    grid-template-columns: 1.6fr 1fr;
+                    gap: 24px;
+                    align-items: start;
+                }
+                @media (max-width: 960px) {
+                    .nrsu-grid {
+                        grid-template-columns: 1fr;
+                    }
+                }
+                @keyframes nrsu-spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
                 }
                 .nrsu-header {
                     padding: 20px 0;
@@ -945,6 +1065,77 @@ class Naver_RSS_Sync_Ultimate {
                         e.preventDefault();
                         $('#nrsu-manual-sync-form').submit();
                     });
+
+                    // Real-Time Dynamic AJAX Category Loader
+                    var lastUrl = $('#nrsu_rss_url').val();
+                    var debounceTimer = null;
+
+                    function handleUrlChange(url) {
+                        url = $.trim(url);
+                        if (url === lastUrl) {
+                            return;
+                        }
+                        lastUrl = url;
+
+                        var $container = $('#nrsu-category-mapping-container');
+
+                        if (!url) {
+                            $container.html('<div class="nrsu-mapping-notice">유효한 RSS 주소를 입력하고 저장해 주세요.</div>');
+                            return;
+                        }
+
+                        // Regex check if it looks like a valid URL
+                        var urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+                        if (!urlPattern.test(url)) {
+                            $container.html('<div class="nrsu-mapping-notice">⚠️ 올바른 형식의 URL을 입력해 주세요.</div>');
+                            return;
+                        }
+
+                        // Show CSS spinner loading notice
+                        $container.html(
+                            '<div class="nrsu-mapping-notice" style="display: flex; align-items: center; justify-content: center; gap: 10px;">' +
+                            '  <span class="nrsu-spinner" style="display: inline-block; width: 18px; height: 18px; border: 2px solid #e5e8eb; border-top-color: #3182f6; border-radius: 50%; animation: nrsu-spin 0.8s linear infinite;"></span>' +
+                            '  카테고리 정보를 가져오는 중입니다...' +
+                            '</div>'
+                        );
+
+                        var nonce = $('#nrsu_sync_nonce').val();
+
+                        $.ajax({
+                            url: ajaxurl,
+                            type: 'POST',
+                            dataType: 'json',
+                            data: {
+                                action: 'nrsu_fetch_categories',
+                                rss_url: url,
+                                security: nonce
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    $container.html(response.data.html);
+                                } else {
+                                    var msg = response.data && response.data.message ? response.data.message : '알 수 없는 오류가 발생했습니다.';
+                                    $container.html('<div class="nrsu-mapping-notice">⚠️ ' + msg + '</div>');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                $container.html('<div class="nrsu-mapping-notice">⚠️ 서버 통신 중 오류가 발생했습니다. (' + error + ')</div>');
+                            }
+                        });
+                    }
+
+                    $('#nrsu_rss_url').on('keyup change paste input', function() {
+                        var $input = $(this);
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(function() {
+                            handleUrlChange($input.val());
+                        }, 600);
+                    });
+
+                    $('#nrsu_rss_url').on('blur', function() {
+                        clearTimeout(debounceTimer);
+                        handleUrlChange($(this).val());
+                    });
                 });
             </script>
             <?php
@@ -998,17 +1189,23 @@ class Naver_RSS_Sync_Ultimate {
             <form id="nrsu-settings-form" method="post" action="options.php">
                 <?php settings_fields( 'naver_rss_sync_ultimate_group' ); ?>
                 
-                <!-- Card 1: Data Source & Destination -->
-                <?php $this->render_basic_settings( $v, $c ); ?>
+                <div class="nrsu-grid">
+                    <div class="nrsu-main-col">
+                        <!-- Card 1: Data Source & Destination -->
+                        <?php $this->render_basic_settings( $v, $c ); ?>
 
-                <!-- Card 2: Category Mapping Settings -->
-                <?php $this->render_category_settings( $opt ); ?>
+                        <!-- Card 2: Category Mapping Settings -->
+                        <?php $this->render_category_settings( $opt ); ?>
+                    </div>
+                    
+                    <div class="nrsu-sidebar-col">
+                        <!-- Card 4: Action/Save Panel -->
+                        <?php $this->render_actions_panel(); ?>
 
-                <!-- Card 3: Compatibility & Editor Override -->
-                <?php $this->render_compatibility_settings( $v, $c, $s ); ?>
-                
-                <!-- Card 4: Action/Save Panel -->
-                <?php $this->render_actions_panel(); ?>
+                        <!-- Card 3: Compatibility & Editor Override -->
+                        <?php $this->render_compatibility_settings( $v, $c, $s ); ?>
+                    </div>
+                </div>
             </form>
 
             <!-- Hidden form for manual sync to avoid form nestings -->
@@ -1140,45 +1337,47 @@ class Naver_RSS_Sync_Ultimate {
 
             <div class="nrsu-field">
                 <label class="nrsu-label">카테고리 개별 매핑 테이블</label>
-                <?php if ( ! empty( $fetch_error_msg ) ) : ?>
-                    <div class="nrsu-mapping-notice">
-                        ⚠️ <?php echo esc_html( $fetch_error_msg ); ?>
-                    </div>
-                <?php elseif ( empty( $unique_naver_categories ) ) : ?>
-                    <div class="nrsu-mapping-notice">
-                        최근 RSS 피드 아이템에 카테고리 정보가 존재하지 않습니다.
-                    </div>
-                <?php else : ?>
-                    <table class="nrsu-table">
-                         <thead>
-                             <tr>
-                                 <th>네이버 블로그 카테고리</th>
-                                 <th>워드프레스 분류 지정</th>
-                             </tr>
-                         </thead>
-                         <tbody>
-                             <?php foreach ( $unique_naver_categories as $naver_cat ) : ?>
-                                 <?php
-                                 $selected_val = isset( $mapping[ $naver_cat ] ) ? intval( $mapping[ $naver_cat ] ) : 0;
-                                 $escaped_key = esc_attr( $naver_cat );
-                                 ?>
+                <div id="nrsu-category-mapping-container">
+                    <?php if ( ! empty( $fetch_error_msg ) ) : ?>
+                        <div class="nrsu-mapping-notice">
+                            ⚠️ <?php echo esc_html( $fetch_error_msg ); ?>
+                        </div>
+                    <?php elseif ( empty( $unique_naver_categories ) ) : ?>
+                        <div class="nrsu-mapping-notice">
+                            최근 RSS 피드 아이템에 카테고리 정보가 존재하지 않습니다.
+                        </div>
+                    <?php else : ?>
+                        <table class="nrsu-table">
+                             <thead>
                                  <tr>
-                                     <td style="font-weight: 500;"><?php echo esc_html( $naver_cat ); ?></td>
-                                     <td>
-                                         <select class="nrsu-select" name="naver_rss_sync_ultimate_settings[category_mapping][<?php echo $escaped_key; ?>]" style="padding: 8px 12px !important; font-size: 13px !important; border-radius: 8px !important;">
-                                             <option value="0" <?php selected( 0, $selected_val ); ?>>자동 생성 또는 기본값 적용</option>
-                                             <?php foreach ( $wp_categories as $wp_cat ) : ?>
-                                                 <option value="<?php echo intval( $wp_cat->term_id ); ?>" <?php selected( $wp_cat->term_id, $selected_val ); ?>>
-                                                     <?php echo esc_html( $wp_cat->name ); ?>
-                                                 </option>
-                                             <?php endforeach; ?>
-                                         </select>
-                                     </td>
+                                     <th>네이버 블로그 카테고리</th>
+                                     <th>워드프레스 분류 지정</th>
                                  </tr>
-                             <?php endforeach; ?>
-                         </tbody>
-                     </table>
-                <?php endif; ?>
+                             </thead>
+                             <tbody>
+                                 <?php foreach ( $unique_naver_categories as $naver_cat ) : ?>
+                                     <?php
+                                     $selected_val = isset( $mapping[ $naver_cat ] ) ? intval( $mapping[ $naver_cat ] ) : 0;
+                                     $escaped_key = esc_attr( $naver_cat );
+                                     ?>
+                                     <tr>
+                                         <td style="font-weight: 500;"><?php echo esc_html( $naver_cat ); ?></td>
+                                         <td>
+                                             <select class="nrsu-select" name="naver_rss_sync_ultimate_settings[category_mapping][<?php echo $escaped_key; ?>]" style="padding: 8px 12px !important; font-size: 13px !important; border-radius: 8px !important;">
+                                                 <option value="0" <?php selected( 0, $selected_val ); ?>>자동 생성 또는 기본값 적용</option>
+                                                 <?php foreach ( $wp_categories as $wp_cat ) : ?>
+                                                     <option value="<?php echo intval( $wp_cat->term_id ); ?>" <?php selected( $wp_cat->term_id, $selected_val ); ?>>
+                                                         <?php echo esc_html( $wp_cat->name ); ?>
+                                                     </option>
+                                                 <?php endforeach; ?>
+                                             </select>
+                                         </td>
+                                     </tr>
+                                 <?php endforeach; ?>
+                             </tbody>
+                         </table>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <?php
