@@ -475,6 +475,73 @@ if ( ! class_exists( 'WP_Query' ) ) {
 }
 
 // ----------------------------------------------------
+// AJAX & Option Helper Stubs for Task 7
+// ----------------------------------------------------
+class WP_Json_Response_Exception extends Exception {
+    public $response;
+    public function __construct( $response ) {
+        $this->response = $response;
+        parent::__construct( is_array($response['data']) && isset($response['data']['message']) ? $response['data']['message'] : 'JSON Response' );
+    }
+}
+
+if ( ! function_exists( 'wp_send_json_success' ) ) {
+    function wp_send_json_success( $data = null, $status_code = null ) {
+        throw new WP_Json_Response_Exception( [ 'success' => true, 'data' => $data ] );
+    }
+}
+
+if ( ! function_exists( 'wp_send_json_error' ) ) {
+    function wp_send_json_error( $data = null, $status_code = null ) {
+        throw new WP_Json_Response_Exception( [ 'success' => false, 'data' => $data ] );
+    }
+}
+
+if ( ! function_exists( 'check_ajax_referer' ) ) {
+    function check_ajax_referer( $action, $query_arg = false, $die = true ) {
+        if ( isset( $GLOBALS['mock_nonce_verification'] ) && ! $GLOBALS['mock_nonce_verification'] ) {
+            return false;
+        }
+        return true;
+    }
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+    function current_user_can( $capability, ...$args ) {
+        if ( isset( $GLOBALS['mock_user_capability'] ) ) {
+            return $GLOBALS['mock_user_capability'];
+        }
+        return true;
+    }
+}
+
+if ( ! function_exists( 'selected' ) ) {
+    function selected( $selected, $current = true, $echo = true ) {
+        $result = ( (string) $selected === (string) $current ) ? " selected='selected'" : '';
+        if ( $echo ) {
+            echo $result;
+        }
+        return $result;
+    }
+}
+
+if ( ! function_exists( 'checked' ) ) {
+    function checked( $checked, $current = true, $echo = true ) {
+        $result = ( (string) $checked === (string) $current ) ? " checked='checked'" : '';
+        if ( $echo ) {
+            echo $result;
+        }
+        return $result;
+    }
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+    function esc_attr( $text ) {
+        return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+    }
+}
+
+// ----------------------------------------------------
 // Existing Tests
 // ----------------------------------------------------
 
@@ -801,6 +868,82 @@ function test_rss_xml_encoding_conversion() {
     echo "PASS: RSS XML Encoding Conversion (EUC-KR -> UTF-8) Test\n";
 }
 
+function test_ajax_fetch_categories() {
+    $instance = Naver_RSS_Sync_Ultimate::get_instance();
+
+    // Reset Globals
+    $GLOBALS['mock_nonce_verification'] = true;
+    $GLOBALS['mock_user_capability'] = true;
+    $GLOBALS['wp_transients'] = [];
+    $GLOBALS['wp_options'] = [];
+    $_POST = [];
+
+    // Case 1: Invalid Nonce
+    $GLOBALS['mock_nonce_verification'] = false;
+    try {
+        $instance->ajax_fetch_categories();
+        assert( false, "Should throw exception on invalid nonce" );
+    } catch ( WP_Json_Response_Exception $e ) {
+        assert( $e->response['success'] === false );
+        assert( strpos( $e->response['data']['message'], '보안 검증' ) !== false );
+    }
+
+    // Case 2: Insufficient Capability
+    $GLOBALS['mock_nonce_verification'] = true;
+    $GLOBALS['mock_user_capability'] = false;
+    try {
+        $instance->ajax_fetch_categories();
+        assert( false, "Should throw exception on insufficient capability" );
+    } catch ( WP_Json_Response_Exception $e ) {
+        assert( $e->response['success'] === false );
+        assert( strpos( $e->response['data']['message'], '권한' ) !== false );
+    }
+
+    // Case 3: Missing RSS URL
+    $GLOBALS['mock_user_capability'] = true;
+    try {
+        $instance->ajax_fetch_categories();
+        assert( false, "Should throw exception on missing RSS URL" );
+    } catch ( WP_Json_Response_Exception $e ) {
+        assert( $e->response['success'] === false );
+        assert( strpos( $e->response['data']['message'], '유효하지 않은 RSS' ) !== false );
+    }
+
+    // Case 4: Invalid RSS URL format
+    $_POST['rss_url'] = 'invalid_url';
+    try {
+        $instance->ajax_fetch_categories();
+        assert( false, "Should throw exception on invalid RSS URL format" );
+    } catch ( WP_Json_Response_Exception $e ) {
+        assert( $e->response['success'] === false );
+        assert( strpos( $e->response['data']['message'], '유효하지 않은 RSS' ) !== false );
+    }
+
+    // Case 5: Valid RSS URL and Success Response
+    $_POST['rss_url'] = 'https://rss.blog.naver.com/test_user.xml';
+    $GLOBALS['mock_rss_body'] = file_get_contents( __DIR__ . '/mock-rss.xml' );
+    
+    // Set up mock category in wp_terms
+    $GLOBALS['wp_terms']['category'] = [
+        10 => '일상',
+        20 => 'IT'
+    ];
+    
+    try {
+        $instance->ajax_fetch_categories();
+        assert( false, "Should throw exception on json success" );
+    } catch ( WP_Json_Response_Exception $e ) {
+        assert( $e->response['success'] === true );
+        $html = $e->response['data']['html'];
+        assert( strpos( $html, 'nrsu-table' ) !== false, "Output should contain table" );
+        assert( strpos( $html, '일상' ) !== false, "Output should contain '일상' category from RSS" );
+        assert( strpos( $html, 'naver_rss_sync_ultimate_settings[category_mapping][일상]' ) !== false, "Output should contain select name with '일상'" );
+        assert( strpos( $html, 'value="10"' ) !== false, "Output should contain WP Category '일상' with option value 10" );
+    }
+
+    echo "PASS: AJAX Dynamic Category Fetching Test\n";
+}
+
 // Execute all tests
 test_image_url_cleansing();
 test_rss_xml_parsing();
@@ -808,3 +951,4 @@ test_seo_and_canonical_logic();
 test_shortcode_rendering_engine();
 test_category_mapping_and_auto_create();
 test_rss_xml_encoding_conversion();
+test_ajax_fetch_categories();
