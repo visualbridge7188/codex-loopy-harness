@@ -6,8 +6,8 @@ import importlib.util
 class TestConfig(unittest.TestCase):
     def setUp(self):
         # Create a clean environment
-        if os.path.exists('config.json'):
-            os.remove('config.json')
+        if os.path.exists('.config.json'):
+            os.remove('.config.json')
             
     def test_config_generation(self):
         # Dynamically import the script to test its functions
@@ -17,7 +17,7 @@ class TestConfig(unittest.TestCase):
         
         config = ai_status.load_config()
         
-        self.assertTrue(os.path.exists('config.json'))
+        self.assertTrue(os.path.exists('.config.json'))
         self.assertIn('Z_AI_API_KEY', config)
         self.assertEqual(config['Z_AI_API_KEY'], 'YOUR_API_KEY_HERE')
 

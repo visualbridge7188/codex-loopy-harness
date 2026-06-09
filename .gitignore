@@ -13,3 +13,7 @@ dist/
 .codex/
 .frontend-slides/
 kkirikkiri-report-*.md
+*.config.json
+__pycache__/
+.config.json
+

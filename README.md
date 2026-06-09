@@ -61,6 +61,38 @@ bash scripts/apply.sh
 
 ---
 
+## 🛠️ 추가 도구: SwiftBar AI Status Monitor
+
+이 레포지토리에는 macOS 메뉴바 유틸리티인 **SwiftBar**를 통해 사용 중인 AI 개발 도구(Codex, Antigravity, Z AI)의 실시간 사용량과 남은 할당량을 모니터링할 수 있는 플러그인 스크립트가 포함되어 있습니다.
+
+### 📌 주요 기능
+1. **Pillow(PIL) 동적 이미지 그래프**: 아스키 아트 대신 고해상도의 네이티브 그래픽 진행 바를 메모리(RAM) 상에서 직접 그려 표출합니다.
+2. **7일 토큰 사용량 페이싱 (Pacing)**:
+   * 7일 권장 속도 대비 현재 사용량이 많은지 적은지 자동으로 판별합니다.
+   * 적정 사용률 임계선을 세로 막대로 표시하며, 예산을 초과하면 마커가 **빨간색(Red)**, 정상 유지 시 **초록색(Green)**으로 자동 변경됩니다.
+3. **Antigravity 로컬 언어 서버 자동 탐색**:
+   * 로컬에서 실행 중인 Antigravity 프로세스(`ps`)와 청취 포트(`lsof`)를 탐색하여 보안 토큰(`--csrf_token`)을 자동 추출합니다.
+   * 로컬 루프백 API 통신을 통해 **Claude, Gemini Pro, Gemini Flash** 모델의 잔여 할당량을 완벽히 개별 모니터링합니다. (서버 미작동 시 CLI 또는 가상 데이터 자동 폴백 지원)
+4. **Z AI 듀얼 할당량 모니터링**:
+   * API 통신을 통해 MCP 호출 횟수(`TIME_LIMIT`)와 모델 토큰 잔량(`TOKENS_LIMIT`)을 둘 다 정밀 추적합니다.
+
+### ⚙️ 설치 및 설정 방법
+1. **플러그인 파일 복사**:
+   [swiftbar_plugins/ai_status.5m.py](file:///Users/parkjuncheol/Local%20Sites/AI%20Agent/hugh.kim/swiftbar_plugins/ai_status.5m.py) 파일을 본인의 SwiftBar 플러그인 디렉토리에 복사합니다.
+2. **Python 인터프리터 경로 구성**:
+   스크립트 첫 행의 Shebang이 Pillow 라이브러리가 설치되어 있는 Homebrew Python 경로(`#!/opt/homebrew/bin/python3` 등)를 가리키도록 설정합니다.
+3. **Z AI API Key 등록**:
+   플러그인과 동일한 경로에 `.config.json` 파일을 생성하여 API 키를 등록합니다:
+   ```json
+   {
+       "Z_AI_API_KEY": "your_actual_api_key_here"
+   }
+   ```
+4. **SwiftBar 리로드**:
+   SwiftBar 앱을 실행하거나, 터미널에서 `open -g "swiftbar://refreshAll"`을 실행하여 리로드합니다.
+
+---
+
 ## 📄 라이센스
 
 본 템플릿은 MIT 라이센스를 따르며, 자유롭게 수정 및 배포가 가능합니다.
