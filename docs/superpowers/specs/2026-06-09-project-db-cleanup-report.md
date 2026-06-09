@@ -149,3 +149,35 @@ Project DB가 지저분해 보이는 가장 큰 이유는 완료된 Project가 �
 3. Relation 변경
 4. Task/Notes 수정
 5. Posting Calendar 수정
+
+---
+
+## 9. 실행 기록
+
+2026-06-09에 1차 정리를 실행했다.
+
+실행한 변경:
+
+1. `진행 상황 = 완료`
+2. `Hide = false`
+3. 위 조건을 모두 만족한 86개 Project를 `Hide = true`로 변경
+
+검증 결과:
+
+| 항목 | 변경 후 |
+| --- | ---: |
+| 전체 Project | 137 |
+| Visible | 29 |
+| Hidden | 108 |
+| `완료` + visible | 0 |
+| `완료` + hidden | 95 |
+| `중지/대기/SKIP` + visible | 4 |
+| `Inbox` + visible | 5 |
+| active visible | 16 |
+
+수정하지 않은 항목:
+
+1. `Inbox` 5개
+2. active visible 16개
+3. `중지/대기/SKIP` visible 4개
+4. 모든 Task, Notes, relation, page content
