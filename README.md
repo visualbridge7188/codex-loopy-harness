@@ -1,193 +1,66 @@
-# 🔄 Codex Loopy Harness
+# 🔄 Codex Loopy Harness & Karpathy Guidelines
 
-> **Verification-first, self-improving multi-agent workspace template**
-> "Tools are weaker than structure. Structure is weaker than verification structure."
+> **검증 우선(Verification-first) 및 안드레 카파시의 개발 원칙이 융합된 경량 에이전트 하니스 템플릿**
+> *"도구는 구조보다 약하고, 구조는 검증 구조보다 약하다. 에이전트의 완료 주장을 맹신하지 말고 결과로 검증하라."*
 
 ---
 
-## What is this?
+## 1. 🔍 프로젝트 개요
 
-A reusable workspace that turns your AI coding assistant into a structured **"Work OS"** with:
+이 프로젝트는 AI 에이전트(Claude Code / Antigravity 등)가 코딩을 수행할 때 발생할 수 있는 실수와 리소스 낭비를 방지하기 위한 **개발 운영 체제(Work OS) 템플릿**입니다. 안드레 카파시의 4대 핵심 개발 원칙과 문서 기반의 강력한 검증 게이트(Hooks)를 결합하여 안정적이고 효율적인 코드 생산을 목표로 합니다.
 
-- **15 specialist agents** with strict file-boundary enforcement
-- **10 automated hooks** for instant policy validation
-- **9 skills** for reusable workflow automation
-- **8-phase SDLC pipeline** with closed-loop QA
+---
 
-## Quick Start
+## 2. 📂 디렉토리 구조 및 핵심 설정 파일
 
-### 1. Copy into your project
+```text
+├── CLAUDE.md              # Claude Code 전용 프롬프트 및 빌드/테스트 명령 정의
+├── AGENTS.md              # 카파시 개발 원칙 + 하니스 핵심 운영 검증 규칙 (시스템 룰 자동 로드)
+├── settings.json          # 에이전트 권한 및 훅(Hooks) 트리거 목록 정의
+├── skills/                # 자주 사용되는 자동화 기능 가이드라인 및 도구 라이브러리
+├── hooks/                 # 파일 수정, 커맨드 실행 전후에 자동 실행되는 보안/포맷 검증 게이트
+├── rules/                 # 코딩 표준 정의 (프론트엔드/백엔드/QA 가이드라인)
+├── scripts/               # 설정 동기화(sync.sh) 및 세션 적용(apply.sh) 등의 유틸 스크립트
+└── docs/                  # 하니스 설계 문서 및 프로젝트 계획/검증용 마크다운 산출물
+```
+
+### ⚙️ 핵심 설정 파일의 역할 (삭제/병합 금지)
+* **`CLAUDE.md`**: IDE/에이전트가 로드될 때 가장 먼저 읽는 설정 파일입니다. 핵심 명령어 단축키와 코딩 스타일을 규정합니다.
+* **`AGENTS.md`**: 에이전트의 작동 철학을 주입하는 핵심 지침서입니다. 카파시의 원칙(Surgical Changes, Simplicity First 등)과 하니스의 Fail-Closed 원칙을 포함하여 프롬프트로 강제 주입됩니다.
+
+---
+
+## 3. 🎯 핵심 운영 원칙
+
+### I. 카파시 개발 원칙 (Karpathy Guidelines)
+1. **Think Before Coding (생각 먼저, 코딩은 나중에)**: 확실하지 않은 사항은 임의로 가정하지 않고 질문하며, 트레이드오프를 사용자에게 먼저 제시합니다.
+2. **Simplicity First (단순성 우선)**: 요구사항 이외의 speculative 코딩(확장성 대비 등)은 철저히 배제하고 최소한의 코드로 구현합니다.
+3. **Surgical Changes (수술적 변경)**: 수정이 필요한 라인만 최소한으로 손대며, 주변 코드를 불필요하게 리팩토링하여 예기치 못한 버그를 유도하지 않습니다.
+4. **Goal-Driven Execution (목표 지향 실행)**: 성공적인 테스트/검증 기준을 먼저 정의하고 이를 통과할 때까지 루프를 수행합니다.
+
+### II. 하니스 Fail-Closed 규칙
+* 테스트 또는 빌드가 실패하거나, 필수 검증 스크립트가 실행되지 않은 경우 작업 완료로 인정하지 않습니다.
+* 파일 접근 권한 및 바운더리 검사를 통과하지 못한 작업은 강제로 차단됩니다.
+
+---
+
+## 4. 🚀 시작하기
+
+### 1) 프로젝트 이식
+새로운 프로젝트 워크스페이스에 이 템플릿의 내용물을 복사합니다:
 ```bash
-cp -r codex-loopy-harness/* /your-project/
+cp -r /path/to/codex-loopy-harness/* /your-project-directory/
 ```
 
-### 2. Initialize
-```
-/init-project
-```
-This profiles your codebase and bootstraps `CLAUDE.md` settings.
-
-### 3. Start building with the hybrid workflow
-
-**Phase 1 — Planning** (Session 1):
-```
-/office-hour      → Discuss your idea
-/brainstorming    → Expand and explore
-/grill-with-docs  → Stress-test the spec
-/writing-plans    → Create the plan document
-```
-
-**Phase 2 — Development** (Session 2):
-```
-@plan-document
-/writing-plans              → Break plan into tasks
-/subagent-driven-development → Parallel implementation
-/qa-cycle                   → Auto QA (up to 5 rounds)
-```
-
-**Phase 3 — Maintenance** (Session 3):
-```
-/improve-codebase-architecture → Refactor & optimize
+### 2) 훅 및 설정 반영
+이식된 스크립트들과 훅이 정상적으로 동작하도록 실행 권한을 부여하고 세션에 동기화합니다:
+```bash
+bash scripts/sync.sh
+bash scripts/apply.sh
 ```
 
 ---
 
-## Directory Structure
+## 📄 라이센스
 
-```
-├── AGENTS.md              # Core rules (3-layer, 8-phase, fail-closed)
-├── CLAUDE.md              # Claude Code configuration
-├── agents/                # 15 specialist agent definitions
-├── skills/                # 9 automation skills
-├── commands/              # 6 slash commands
-├── hooks/                 # 10 automated policy gates
-├── rules/                 # Coding standards (frontend/backend/QA)
-├── scripts/               # Utility scripts (sync, apply)
-└── docs/
-    ├── harness/           # Full documentation
-    │   ├── introduction.md          # System overview & operations
-    │   ├── workflow-comparison.md   # Hybrid workflow recommendation
-    │   ├── principles.md            # Design principles
-    │   ├── usage.md                 # Usage guide
-    │   ├── gates.md                 # Hook gates reference
-    │   └── memory.md                # Memory system docs
-    ├── superpowers/       # Plans & specs (project-specific)
-    └── verification/      # QA evidence JSON
-```
-
----
-
-## Architecture
-
-### 3-Layer System
-
-| Layer | Role | Model |
-|-------|------|-------|
-| **Manager-Orchestrator** | Plans, delegates, verifies | Opus |
-| **Specialist Agents** | Frontend, Backend, QA, Security, etc. | Sonnet |
-| **Automated Hooks** | Instant policy enforcement | Shell scripts |
-
-### 8-Phase Pipeline
-
-```
-P1: Plan → P2: Architect → P3: Database → P4: Parallel Implement
-P5: Test Suite → P6: Review → P7: Closed-Loop QA → P8: Ship
-```
-
-### Fail-Closed Rules
-
-Work is blocked if:
-- ❌ Acceptance criteria missing for non-trivial tasks
-- ❌ Build/tsc/lint fails
-- ❌ CRITICAL/HIGH severity QA issues unresolved
-- ❌ Verification commands not run
-- ❌ File boundary violations detected
-
----
-
-## Agents (15)
-
-| Agent | Scope |
-|-------|-------|
-| `manager-orchestrator` | Overall coordination, never writes code |
-| `architect-designer` | File structure, dependencies |
-| `product-specifier` | PRDs, specs, user journeys |
-| `frontend-specialist` | `src/components/**`, `src/pages/**` |
-| `backend-specialist` | `src/api/**`, `src/lib/server/**` |
-| `supabase-specialist` | `supabase/migrations/**` |
-| `test-writer` | `test/**`, `__tests__/**` |
-| `code-reviewer` | Static analysis, patterns |
-| `web-qa-tester` | E2E testing, browser scenarios |
-| `security-specialist` | Vulnerability scanning |
-| `devops-specialist` | CI/CD, deployment |
-| `bug-fixer` | Debugging, hotfixes |
-| `documentation-specialist` | Docs, README |
-| `performance-optimizer` | Profiling, optimization |
-| `telegram-notifier` | Notifications via Telegram |
-
-## Skills (8)
-
-| Skill | Purpose |
-|-------|---------|
-| `init-project` | Profile codebase & bootstrap settings |
-| `team` | Run full 8-phase SDLC pipeline |
-| `qa-cycle` | Auto multi-round QA testing (up to 5 rounds) |
-| `qa-scenario-gen` | Generate QA test plans & coverage matrices |
-| `self-improve` | Harness self-improvement cycle |
-| `discover-skills` | Search for external skills |
-| `harness-report` | Generate harness status report |
-| `loopy-era-eval` | Loopy Era evaluation |
-
-## Hooks (10)
-
-| Hook | Action |
-|------|--------|
-| `auto-validate.sh` | Auto-validate on change |
-| `agent-permission-check.sh` | Enforce agent file boundaries |
-| `scaffold-violation-check.sh` | Detect structure violations |
-| `no-localstorage.sh` | Block localStorage usage |
-| `sql-injection-check.sh` | Detect SQL injection patterns |
-| `require-telegram-notify.sh` | Require Telegram notification |
-| `require-isPWA-check.sh` | Require PWA check |
-| `pre-push-qa.sh` | QA gate before push |
-| `context-enrichment.sh` | Auto context enrichment |
-| `session-cleanup.sh` | Cleanup on session end |
-
----
-
-## Customization
-
-### Adding project-specific agents
-Create a new `.md` file in `agents/` following the existing format:
-```markdown
-# Agent Name
-## Role
-## Boundaries
-- Allowed: `path/**`
-- Blocked: `path/**`
-```
-
-### Adding project-specific hooks
-Create a new `.sh` file in `hooks/`. Hooks must exit with code `2` to block.
-
-### Removing unnecessary components
-- Don't use Supabase? Remove `agents/supabase-specialist.md` and skip P3.
-- Don't use Telegram? Remove `agents/telegram-notifier.md` and `hooks/require-telegram-notify.sh`.
-- Only need QA? Just use `/qa-cycle` skill standalone.
-
----
-
-## Documentation
-
-- [System Introduction & Operations](docs/harness/introduction.md)
-- [Workflow Comparison & Hybrid Recommendation](docs/harness/workflow-comparison.md)
-- [Design Principles](docs/harness/principles.md)
-- [Usage Guide](docs/harness/usage.md)
-- [Hook Gates Reference](docs/harness/gates.md)
-- [Memory System](docs/harness/memory.md)
-
----
-
-## License
-
-MIT — Use freely. Attribution appreciated but not required.
+본 템플릿은 MIT 라이센스를 따르며, 자유롭게 수정 및 배포가 가능합니다.
