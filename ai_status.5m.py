@@ -10,6 +10,12 @@ import subprocess
 import urllib.request
 import urllib.error
 
+# Prepend standard binary search paths for SwiftBar environment
+extra_paths = ["/usr/local/bin", "/opt/homebrew/bin", os.path.expanduser("~/.codex/bin")]
+for path in extra_paths:
+    if path not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = f"{path}:{os.environ.get('PATH', '')}"
+
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
 def load_config():
