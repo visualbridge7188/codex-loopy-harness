@@ -16,6 +16,7 @@
 4. Topics DB
 5. Notebook DB
 6. Posting Calendar DB
+7. Areas DB
 
 현재 목적은 DB 구조를 갈아엎는 것이 아니라, 이미 만들어진 시스템의 역할과 예외 규칙을 문서화하는 것이다. 특히 `Posting Calendar <-> Task` 연결 개선은 현재 급한 문제가 아니므로 이번 문서에서는 보류한다.
 
@@ -28,11 +29,16 @@ graph TD
   Project["Project DB<br/>목표/컨테이너"]
   Task["Task DB<br/>실행 작업"]
   Note["Notes DB<br/>자료/생각/산출물"]
-  Topic["Topics DB<br/>Notes 기본 분류"]
+  Area["Areas DB<br/>최상위 영역"]
+  Topic["Topics DB<br/>Notes 기본 주제"]
   Notebook["Notebook DB<br/>선택적 소주제 컬렉션"]
   Posting["Posting Calendar DB<br/>콘텐츠 원장"]
 
   Project --> Task
+  Area --> Topic
+  Area -.선택적.-> Project
+  Area -.선택적.-> Task
+  Area -.선택적.-> Note
   Topic --> Note
   Notebook -.선택적.-> Note
   Project -.선택적.-> Note
@@ -100,14 +106,25 @@ Notes DB는 자료, 생각, 리서치, 산출물의 지식 원장이다.
 
 ### Topics DB
 
-Topics DB는 주로 Notes의 대주제 분류다.
+Topics DB는 주로 Notes의 주제 분류다. 실제 스키마상 Topic은 `Area`와도 연결되어 있으므로, Area보다 작은 주제 단위로 본다.
 
 운영 원칙:
 
-1. Topic은 장기적 관심사나 대주제다.
+1. Topic은 Area보다 작은 주제다.
 2. Topic은 주로 Notes 분류용으로 사용한다.
 3. Project에 Topic을 붙일 수는 있지만 필수는 아니다.
 4. Topic을 Project 분류 체계로도 강하게 쓰려고 하면 관리 부담이 커진다.
+
+### Areas DB
+
+Areas DB는 Task, Project, Notes, Topic을 모두 연결할 수 있는 최상위 영역 DB다.
+
+운영 원칙:
+
+1. Area는 Topic보다 큰 상위 영역이다.
+2. Area는 Notes, Project, Task에 연결될 수 있지만 필수 분류로 강제하지 않는다.
+3. Notes의 기본 분류는 Topic이며, Area는 필요할 때 상위 맥락을 제공한다.
+4. Project와 Task의 기본 맥락은 Project relation이며, Area는 보조 분류로 둔다.
 
 ### Notebook DB
 
@@ -149,9 +166,17 @@ Posting Calendar DB는 글감, 키워드, 포스팅 진행을 추적하는 콘�
 3. 여러 Project에 걸치는 Task는 쪼개거나 대표 Project 하나를 선택한다.
 4. Project 완료는 Task 완료율이 아니라 사용자의 수동 판단으로 결정한다.
 
+### Areas -> Topics
+
+`Area -> Topic`은 상위 영역과 하위 주제 관계다.
+
+1. Area는 Topic보다 큰 상위 영역이다.
+2. Topic은 가능하면 Area와 연결할 수 있다.
+3. Area를 Task/Project/Note에 직접 붙일 수 있지만, 남발하지 않는다.
+
 ### Notes -> Topics
 
-`Topic`은 Notes의 기본 분류 체계다.
+`Topic`은 Notes의 기본 주제 분류 체계다.
 
 1. Note에는 가능하면 Topic을 붙인다.
 2. Topic은 대주제다.
@@ -202,7 +227,7 @@ Notion MCP/CLI는 상시 자동화 엔진이 아니라 점검, 정비, 마이그
 
 실제 Notion DB 정리는 다음 순서로 진행한다.
 
-1. 6개 DB의 스키마를 조회한다.
+1. 7개 DB의 스키마를 조회한다.
 2. 속성명, relation, rollup, formula, status 속성을 기록한다.
 3. 이 문서의 헌법과 실제 스키마가 충돌하는 부분을 표시한다.
 4. 속성 추가 없이 정리 가능한 운영 규칙을 먼저 제안한다.
