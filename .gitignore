@@ -13,3 +13,4 @@ dist/
 .codex/
 .frontend-slides/
 kkirikkiri-report-*.md
+__pycache__/
