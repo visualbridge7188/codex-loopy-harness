@@ -10,15 +10,14 @@ spec.loader.exec_module(ai_status)
 class TestUIRender(unittest.TestCase):
     @patch('sys.stdout', new_callable=StringIO)
     def test_render_output(self, mock_stdout):
-        codex = {"remaining": "45k", "reset": "12m", "alert": False, "error": None}
-        ag = {"remaining": "82%", "reset": "1h", "alert": True, "error": None}
-        zai = {"remaining": "85", "reset": "18:00", "alert": False, "error": None}
+        codex = {"percent": 45, "remaining": "45k", "reset": "12m", "alert": False, "error": None}
+        ag = {"percent": 82, "remaining": "82%", "reset": "1h", "alert": True, "error": None}
+        zai = {"percent": 85, "remaining": "85", "reset": "18:00", "alert": False, "error": None}
         
         ai_status.render_ui(codex, ag, zai)
         
         output = mock_stdout.getvalue()
-        # Should render combined single line for menu bar with warning symbols and overall color
-        self.assertIn("🤖 CX: 45k │ 🚀⚠️ AG: 82% │ ⚡️ Z: 85 | color=red", output)
+        self.assertIn("🤖 45% │ 🚀 82% │ ⚡️ 85%\n██░░░ │ ████░ │ ████░ | size=10 color=red", output)
         self.assertIn("refresh=true", output)
 
 if __name__ == '__main__':

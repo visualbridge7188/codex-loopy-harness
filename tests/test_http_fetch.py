@@ -10,12 +10,12 @@ class TestHttpFetch(unittest.TestCase):
     @patch('urllib.request.urlopen')
     def test_get_zai(self, mock_urlopen):
         mock_response = MagicMock()
-        mock_response.read.return_value = b'{"data": {"remaining_requests": 85, "next_reset_time": "18:00"}}'
+        mock_response.read.return_value = b'{"success": true, "data": {"limits": [{"type": "TIME_LIMIT", "remaining": 85, "percentage": 15, "nextResetTime": 1781446875995}]}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
         
         result = ai_status.get_zai_data("fake_key")
-        self.assertEqual(result['remaining'], "85")
-        self.assertEqual(result['reset'], "18:00")
+        self.assertEqual(result['remaining'], "85%")
+        self.assertEqual(result['percent'], 85)
         self.assertFalse(result['alert'])
 
 if __name__ == '__main__':

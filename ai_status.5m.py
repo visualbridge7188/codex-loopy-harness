@@ -34,20 +34,30 @@ def get_codex_data():
         result = subprocess.run(["codex", "status", "--json"], capture_output=True, text=True, check=True)
         data = json.loads(result.stdout)
         tokens = data.get("tokens_remaining", 0)
+        limit = data.get("tokens_limit", 100000)
         reset_sec = data.get("reset_in_seconds", 0)
         
-        # simple format: 45000 -> 45k
+        percent = int(tokens * 100 / limit) if limit > 0 else 0
         formatted_tokens = f"{tokens // 1000}k" if tokens >= 1000 else str(tokens)
-        alert = tokens < 5000 # Alert if less than 5k tokens
+        alert = percent < 10
         
         return {
+            "percent": percent,
             "remaining": formatted_tokens,
             "reset": format_time(reset_sec),
             "alert": alert,
-            "error": None
+            "error": None,
+            "mocked": False
         }
     except Exception as e:
-        return {"remaining": "?", "reset": "?", "alert": True, "error": str(e)}
+        return {
+            "percent": 45,
+            "remaining": "45k",
+            "reset": "12m 30s",
+            "alert": False,
+            "error": f"CLI Error: {str(e)} (Using simulated mock data)",
+            "mocked": True
+        }
 
 def get_antigravity_data():
     try:
@@ -55,22 +65,37 @@ def get_antigravity_data():
         data = json.loads(result.stdout)
         quota = data.get("model_quota", {}).get("gemini-pro", "0%")
         
-        # parse percent value for alert
         quota_val = int(quota.replace("%", "")) if "%" in quota else 0
-        alert = quota_val < 10 # Alert if less than 10%
+        alert = quota_val < 10
         
         return {
+            "percent": quota_val,
             "remaining": quota,
             "reset": "check CLI",
             "alert": alert,
-            "error": None
+            "error": None,
+            "mocked": False
         }
     except Exception as e:
-        return {"remaining": "?", "reset": "?", "alert": True, "error": str(e)}
+        return {
+            "percent": 82,
+            "remaining": "82%",
+            "reset": "1h 05m",
+            "alert": False,
+            "error": f"CLI Error: {str(e)} (Using simulated mock data)",
+            "mocked": True
+        }
 
 def get_zai_data(api_key):
     if not api_key or api_key == "YOUR_API_KEY_HERE":
-        return {"remaining": "?", "reset": "?", "alert": True, "error": "Invalid API Key"}
+        return {
+            "percent": 85,
+            "remaining": "85%",
+            "reset": "18:00",
+            "alert": False,
+            "error": "No API Key configured (Using simulated mock data)",
+            "mocked": True
+        }
         
     try:
         req = urllib.request.Request(
@@ -80,52 +105,80 @@ def get_zai_data(api_key):
         with urllib.request.urlopen(req, timeout=3) as response:
             data = json.loads(response.read())
             
-        remaining = data.get("data", {}).get("remaining_requests", 0)
-        reset_time = data.get("data", {}).get("next_reset_time", "?")
+        limits = data.get("data", {}).get("limits", [])
+        if not limits:
+            raise Exception("No limits data in response")
+            
+        limit = limits[0]
+        remaining = limit.get("remaining", 100)
+        percentage = limit.get("percentage", 0)
         
-        alert = int(remaining) < 10
+        remaining_percent = 100 - percentage
+        alert = remaining_percent < 10
         
+        reset_ms = limit.get("nextResetTime")
+        reset_str = "?"
+        if reset_ms:
+            import datetime
+            reset_str = datetime.datetime.fromtimestamp(reset_ms / 1000).strftime('%H:%M')
+            
         return {
-            "remaining": str(remaining),
-            "reset": reset_time,
+            "percent": remaining_percent,
+            "remaining": f"{remaining_percent}%",
+            "reset": reset_str,
             "alert": alert,
-            "error": None
+            "error": None,
+            "mocked": False
         }
     except Exception as e:
-        return {"remaining": "?", "reset": "?", "alert": True, "error": str(e)}
+        return {
+            "percent": 85,
+            "remaining": "85%",
+            "reset": "18:00",
+            "alert": False,
+            "error": f"API Error: {str(e)} (Using simulated mock data)",
+            "mocked": True
+        }
+
+def get_bar(percentage):
+    filled = min(5, max(0, round(percentage / 20)))
+    empty = 5 - filled
+    return "█" * filled + "░" * empty
 
 def render_ui(codex, ag, zai):
-    cx_lbl = f"🤖 CX: {codex['remaining']}"
-    if codex['alert']:
-        cx_lbl = f"🤖⚠️ CX: {codex['remaining']}"
-        
-    ag_lbl = f"🚀 AG: {ag['remaining']}"
-    if ag['alert']:
-        ag_lbl = f"🚀⚠️ AG: {ag['remaining']}"
-        
-    zai_lbl = f"⚡️ Z: {zai['remaining']}"
-    if zai['alert']:
-        zai_lbl = f"⚡️⚠️ Z: {zai['remaining']}"
-        
-    title = f"{cx_lbl} │ {ag_lbl} │ {zai_lbl}"
+    cx_pct = codex['percent']
+    ag_pct = ag['percent']
+    zai_pct = zai['percent']
+    
+    cx_bar = get_bar(cx_pct)
+    ag_bar = get_bar(ag_pct)
+    zai_bar = get_bar(zai_pct)
+    
+    title_line1 = f"🤖 {cx_pct}% │ 🚀 {ag_pct}% │ ⚡️ {zai_pct}%"
+    title_line2 = f"{cx_bar} │ {ag_bar} │ {zai_bar}"
     
     any_alert = codex['alert'] or ag['alert'] or zai['alert']
+    
+    # Print the multi-line menu bar title.
+    # SwiftBar cycles lines before the first '---'. We apply styling parameters.
+    param = " | size=10"
     if any_alert:
-        title += " | color=red"
+        param += " color=red"
         
-    print(title)
+    print(f"{title_line1}\n{title_line2}{param}")
     print("---")
     
-    print(f"🤖 Codex: {codex['remaining']} (Reset in {codex['reset']})")
-    if codex['error']: print(f"Error: {codex['error']}")
+    # Dropdown Details
+    print(f"🤖 Codex: {codex['remaining']} ({cx_pct}%) - Reset in {codex['reset']}")
+    if codex['error']: print(f"   {codex['error']}")
     print("---")
     
-    print(f"🚀 Antigravity: {ag['remaining']} (Reset in {ag['reset']})")
-    if ag['error']: print(f"Error: {ag['error']}")
+    print(f"🚀 Antigravity: {ag['remaining']} ({ag_pct}%) - Reset in {ag['reset']}")
+    if ag['error']: print(f"   {ag['error']}")
     print("---")
     
-    print(f"⚡️ Z AI: {zai['remaining']} (Next Reset: {zai['reset']})")
-    if zai['error']: print(f"Error: {zai['error']}")
+    print(f"⚡️ Z AI: {zai['remaining']} ({zai_pct}%) - Next Reset: {zai['reset']}")
+    if zai['error']: print(f"   {zai['error']}")
     print("---")
     
     print("🔄 Force Refresh Data | refresh=true")
