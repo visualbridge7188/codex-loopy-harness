@@ -17,9 +17,8 @@ class TestUIRender(unittest.TestCase):
         ai_status.render_ui(codex, ag, zai)
         
         output = mock_stdout.getvalue()
-        self.assertIn("🤖 CX: 45k", output)
-        self.assertIn("🚀 AG: 82% | color=red", output) # alert should add red
-        self.assertIn("⚡️ Z: 85", output)
+        # Should render combined single line for menu bar with warning symbols and overall color
+        self.assertIn("🤖 CX: 45k │ 🚀⚠️ AG: 82% │ ⚡️ Z: 85 | color=red", output)
         self.assertIn("refresh=true", output)
 
 if __name__ == '__main__':

@@ -94,18 +94,26 @@ def get_zai_data(api_key):
     except Exception as e:
         return {"remaining": "?", "reset": "?", "alert": True, "error": str(e)}
 
-def format_item(emoji, prefix, data):
-    base = f"{emoji} {prefix}: {data['remaining']}"
-    if data['alert']:
-        base += " | color=red"
-    return base
-
 def render_ui(codex, ag, zai):
-    cx_str = format_item("🤖", "CX", codex)
-    ag_str = format_item("🚀", "AG", ag)
-    zai_str = format_item("⚡️", "Z", zai)
+    cx_lbl = f"🤖 CX: {codex['remaining']}"
+    if codex['alert']:
+        cx_lbl = f"🤖⚠️ CX: {codex['remaining']}"
+        
+    ag_lbl = f"🚀 AG: {ag['remaining']}"
+    if ag['alert']:
+        ag_lbl = f"🚀⚠️ AG: {ag['remaining']}"
+        
+    zai_lbl = f"⚡️ Z: {zai['remaining']}"
+    if zai['alert']:
+        zai_lbl = f"⚡️⚠️ Z: {zai['remaining']}"
+        
+    title = f"{cx_lbl} │ {ag_lbl} │ {zai_lbl}"
     
-    print(f"{cx_str} | {ag_str} | {zai_str}")
+    any_alert = codex['alert'] or ag['alert'] or zai['alert']
+    if any_alert:
+        title += " | color=red"
+        
+    print(title)
     print("---")
     
     print(f"🤖 Codex: {codex['remaining']} (Reset in {codex['reset']})")
