@@ -7,6 +7,8 @@
 import os
 import json
 import subprocess
+import urllib.request
+import urllib.error
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
@@ -60,6 +62,32 @@ def get_antigravity_data():
         return {
             "remaining": quota,
             "reset": "check CLI",
+            "alert": alert,
+            "error": None
+        }
+    except Exception as e:
+        return {"remaining": "?", "reset": "?", "alert": True, "error": str(e)}
+
+def get_zai_data(api_key):
+    if not api_key or api_key == "YOUR_API_KEY_HERE":
+        return {"remaining": "?", "reset": "?", "alert": True, "error": "Invalid API Key"}
+        
+    try:
+        req = urllib.request.Request(
+            "https://api.z.ai/api/monitor/usage/quota/limit",
+            headers={"Authorization": f"Bearer {api_key}", "Accept": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read())
+            
+        remaining = data.get("data", {}).get("remaining_requests", 0)
+        reset_time = data.get("data", {}).get("next_reset_time", "?")
+        
+        alert = int(remaining) < 10
+        
+        return {
+            "remaining": str(remaining),
+            "reset": reset_time,
             "alert": alert,
             "error": None
         }
