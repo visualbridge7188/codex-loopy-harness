@@ -94,5 +94,39 @@ def get_zai_data(api_key):
     except Exception as e:
         return {"remaining": "?", "reset": "?", "alert": True, "error": str(e)}
 
+def format_item(emoji, prefix, data):
+    base = f"{emoji} {prefix}: {data['remaining']}"
+    if data['alert']:
+        base += " | color=red"
+    return base
+
+def render_ui(codex, ag, zai):
+    cx_str = format_item("🤖", "CX", codex)
+    ag_str = format_item("🚀", "AG", ag)
+    zai_str = format_item("⚡️", "Z", zai)
+    
+    print(f"{cx_str} | {ag_str} | {zai_str}")
+    print("---")
+    
+    print(f"🤖 Codex: {codex['remaining']} (Reset in {codex['reset']})")
+    if codex['error']: print(f"Error: {codex['error']}")
+    print("---")
+    
+    print(f"🚀 Antigravity: {ag['remaining']} (Reset in {ag['reset']})")
+    if ag['error']: print(f"Error: {ag['error']}")
+    print("---")
+    
+    print(f"⚡️ Z AI: {zai['remaining']} (Next Reset: {zai['reset']})")
+    if zai['error']: print(f"Error: {zai['error']}")
+    print("---")
+    
+    print("🔄 Force Refresh Data | refresh=true")
+
 if __name__ == "__main__":
     config = load_config()
+    
+    codex_data = get_codex_data()
+    ag_data = get_antigravity_data()
+    zai_data = get_zai_data(config.get("Z_AI_API_KEY", ""))
+    
+    render_ui(codex_data, ag_data, zai_data)
